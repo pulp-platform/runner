@@ -1,0 +1,54 @@
+#!/bin/bash -ex
+
+###########
+# setup
+###########
+APP=$2
+#BUILD_DIR=build/
+BUILD_DIR=$1
+
+APP_DIR=`dirname ${APP}`
+APP_NAME=`basename ${APP}`
+
+###########
+# prepare
+###########
+# .bin
+
+#${RISCVV2_GCC_TOOLCHAIN}/bin/riscv32-unknown-elf-objcopy -j .heapsram -O binary ${APP} ${APP}.tcdm.bin
+#${RISCVV2_GCC_TOOLCHAIN}/bin/riscv32-unknown-elf-objcopy -j .vectors -j .text -j .data -j .ram -j .dtors -j .rodata -j .got -j .boot -j .heapl2ram -O binary ${APP} ${APP}.l2.bin
+
+
+#${RISCVV2_GCC_TOOLCHAIN}/bin/riscv32-unknown-elf-objcopy -R .debug_frame -R .comment -R .stack -R .heapl1 -R .heapsram -R .heapscm -O binary ${BUILD_DIR}/${APP} ${APP}.bin
+
+# .slm
+${RISCVV2_GCC_TOOLCHAIN}/bin/riscv32-unknown-elf-objcopy --srec-len 1 --output-target=srec ${BUILD_DIR}/${APP} ${BUILD_DIR}/${APP}.s19
+$PULP_SDK_HOME/install/ws/bin/s19toslm.py ${BUILD_DIR}/${APP}.s19
+
+# .read
+${RISCVV2_GCC_TOOLCHAIN}/bin/riscv32-unknown-elf-objdump -DS ${BUILD_DIR}/${APP} > ${APP}.read
+
+# cleanup
+#rm -f tcdm*
+rm -f l2_ram_cut1*
+rm -f l2_ram_cut2*
+rm -f l2_ram_cut3*
+rm -f l2_stim.slm
+rm -f flash_stim.slm
+
+###########
+# copy
+###########
+
+if [ -z "${SCP_TARGET_MACHINE}" ]; then
+    echo "SCP_TARGET_MACHINE must be defined"
+    exit 1
+fi
+
+if [ -z "${SCP_TARGET_PATH}" ]; then
+    echo "SCP_TARGET_PATH must be defined"
+    exit 1
+fi
+
+scp ${APP}.tcdm.bin ${SCP_TARGET_MACHINE}:${SCP_TARGET_PATH}/${APP_NAME}/${APP_NAME}.tcdm.bin
+scp ${APP}.l2.bin ${SCP_TARGET_MACHINE}:${SCP_TARGET_PATH}/${APP_NAME}/${APP_NAME}.l2.bin
