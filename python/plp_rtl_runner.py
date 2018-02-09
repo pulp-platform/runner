@@ -480,6 +480,20 @@ class Runner(Platform):
             if 'controller' in devices:                
                 self.simArgs.append('-gENABLE_DEBUG_BRIDGE=1')
 
+        if self.system_tree.get('pulp_chip') == 'pulpissimo':
+            if self.system_tree.get('fc/core') == 'ri5ky_v2_fpu':
+                self.simArgs.append('-gCORE_TYPE=0')
+                self.simArgs.append('-gRISCY_FPU=1')
+            elif self.system_tree.get('fc/core') == 'ri5ky_v2':
+                self.simArgs.append('-gCORE_TYPE=0')
+                self.simArgs.append('-gRISCY_FPU=0')
+            elif self.system_tree.get('fc/core') == 'zeroriscy':
+                self.simArgs.append('-gCORE_TYPE=1')
+                self.simArgs.append('-gRISCY_FPU=0')
+            elif self.system_tree.get('fc/core') == 'microriscy':
+                self.simArgs.append('-gCORE_TYPE=2')
+                self.simArgs.append('-gRISCY_FPU=0')
+
         if self.rtlLibs == None:
             raise Exception("ERROR: no RTL install specified, can't launch simulation")
 
