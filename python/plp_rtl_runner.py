@@ -466,7 +466,7 @@ class Runner(Platform):
 
         self.prepareSim()
 
-        devices = dpi.get_devices(self.system_tree.get_config('system'))
+        devices = dpi.get_devices(self.system_tree.get_config('system_tree'))
         if self.system_tree.get('loader/bridge') == 'debug-bridge':
             devices.append('controller')
         if len(devices) != 0:
