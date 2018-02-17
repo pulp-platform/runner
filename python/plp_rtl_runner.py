@@ -370,6 +370,9 @@ class Runner(Platform):
         if self.config.getOption('hyper'):
             self.simArgs.append('+VSIM_PADMUX_CFG=TB_PADMUX_ALT3_HYPERBUS')
 
+        if self.system_tree.get('tb_comps') is not None:
+            self.simArgs.append('-gCONFIG_FILE=%s' % self.config.getOption('configFile'))
+
         if self.config.getOption('vsimGpioLoopback'):
             exportVarCmd = "%s export VSIM_PADMUX_CFG=TB_PADMUX_GPIO_LOOPBACK;" % (exportVarCmd)
 
