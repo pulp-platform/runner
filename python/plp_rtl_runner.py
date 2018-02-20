@@ -398,7 +398,7 @@ class Runner(Platform):
         loadMode = self.config.getOption('load')
 
         if loadMode == None: 
-            if self.pulpArchi.find('pulpissimo') != -1:
+            if self.pulpArchi.find('pulpissimo') != -1 or self.pulpArchi == 'pulp':
                 loadMode = 'jtag'
             elif self.pulpArchi.find('gap') == -1 and self.pulpArchi.find('wolfe') == -1 and self.pulpArchi != 'quentin':
                 loadMode = 'preload'            
