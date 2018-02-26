@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # ////////////////////////////////////////////////////////////////////////////////
 # // Company:        Multitherman Laboratory @ DEIS - University of Bologna     //
@@ -173,7 +173,7 @@ stimuli = Stimuli()
 # Function to dump single bytes of a string to a file
 ###############################################################################
 def dump_bytes( filetoprint, addr, data_s):
-    for i in xrange(0,4,1):
+    for i in range(0,4,1):
         filetoprint.write("@%08X %s\n" % ( addr+i,  data_s[(3-i)*2:((3-i)+1)*2] ))
     return 4
 
@@ -231,7 +231,7 @@ def bytes_to_words(byte_dict, word_dict):
 # Start of file
 ###############################################################################
 if(len(sys.argv) < 2):
-    print "Usage s19toslm.py FILENAME"
+    print ("Usage s19toslm.py FILENAME")
     quit()
 
 archi = None
