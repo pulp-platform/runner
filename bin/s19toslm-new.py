@@ -100,7 +100,7 @@ class FlashStimFile(object):
 
         index = 0
         for area in areas:
-            area.nbBlocks = (area.size + self.blockSize - 1) / self.blockSize
+            area.nbBlocks = int((area.size + self.blockSize - 1) / self.blockSize)
             area.offset = flashOffset
             flashOffset += area.nbBlocks * 4096
             print ("  Area %d: offset: 0x%x, base: 0x%x, size: 0x%x, nbBlocks: %d" % (index, area.offset, area.base, area.size, area.nbBlocks))
@@ -189,8 +189,9 @@ def s19_parse(filename, s19_dict):
         if rec_field == "S0" or prefix == "S009" or prefix == "S505" or prefix == "S705" or prefix == "S017" or prefix == "S804" or line == "":
             continue
 
-        data = line[-6:-4] # extract data byte
-        str_addr = line[4:-6]
+
+        data = line[-5:-3] # extract data byte
+        str_addr = line[4:-5]
 
         addr = int("0x%s" % str_addr, 0)
 
