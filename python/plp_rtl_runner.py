@@ -187,6 +187,7 @@ class Runner(Platform):
             self.rtlLibs = rtlLibs
 
             if os.environ.get('VSIM_PATH') == None: os.environ['VSIM_PATH'] = rtlLibs
+            os.environ['PULP_PATH'] = rtlLibs
             os.environ['TB_PATH'] = rtlLibs
 
         if self.config.getOption('flashStimuli') != None:
@@ -398,7 +399,7 @@ class Runner(Platform):
         loadMode = self.config.getOption('load')
 
         if loadMode == None: 
-            if self.pulpArchi.find('pulpissimo') != -1 or self.pulpArchi == 'pulp':
+            if self.pulpArchi.find('pulpissimo') != -1 or self.pulpArchi == 'pulp' or self.pulpArchi == 'vivosoc3':
                 loadMode = 'jtag'
             elif self.pulpArchi.find('gap') == -1 and self.pulpArchi.find('wolfe') == -1 and self.pulpArchi != 'quentin':
                 loadMode = 'preload'            
@@ -424,6 +425,9 @@ class Runner(Platform):
             self.simArgs.append('-gLOAD_L2=JTAG_DEV')
         else:
             self.simArgs.append('-gLOAD_L2=STANDALONE')
+
+        if self.pulpArchi == 'vivosoc3':
+            self.simArgs.append("-gBOOT_ADDR=32'h1C008000")
 
         if self.system_tree.get('loader/bridge') == 'debug-bridge':
             self.simArgs.append('-gENABLE_DEBUG_BRIDGE=1')
@@ -516,7 +520,7 @@ class Runner(Platform):
             os.symlink(os.path.join(self.rtlLibs, 'tcl_files'), 'tcl_files')
             if os.path.islink('waves'): os.remove('waves')
             os.symlink(os.path.join(self.rtlLibs, 'waves'), 'waves')
-            if self.pulpArchi.find('wolfe') != -1 or self.pulpArchi == 'quentin' or self.pulpArchi.find('vivosoc3') != -1:
+            if self.pulpArchi.find('wolfe') != -1 or self.pulpArchi == 'quentin':
                 if os.path.islink('modelsim_libs'): os.remove('modelsim_libs')
                 os.symlink(os.path.join(self.rtlLibs, 'modelsim_libs'), 'modelsim_libs')
                 
