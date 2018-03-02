@@ -186,8 +186,9 @@ class Runner(Platform):
 
             self.rtlLibs = rtlLibs
 
-            if os.environ.get('VSIM_PATH') == None: os.environ['VSIM_PATH'] = rtlLibs
-            os.environ['PULP_PATH'] = rtlLibs
+            if os.environ.get('VSIM_PATH') == None:
+                os.environ['VSIM_PATH'] = rtlLibs
+                os.environ['PULP_PATH'] = rtlLibs
             os.environ['TB_PATH'] = rtlLibs
 
         if self.config.getOption('flashStimuli') != None:
