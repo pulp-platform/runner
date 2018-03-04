@@ -374,6 +374,7 @@ class Runner(Platform):
 
         if self.system_tree.get('tb_comps') is not None:
             self.simArgs.append('-gCONFIG_FILE=%s' % self.config.getOption('configFile'))
+            self.simArgs.append('-sv_lib %s/install/ws/lib/libpulpdpi' % (os.environ.get('PULP_SDK_HOME')))
 
         if self.config.getOption('vsimGpioLoopback'):
             exportVarCmd = "%s export VSIM_PADMUX_CFG=TB_PADMUX_GPIO_LOOPBACK;" % (exportVarCmd)
@@ -398,8 +399,10 @@ class Runner(Platform):
             exportVarCmd = "%s export DO_FILES=\'%s\';" % (exportVarCmd, doFiles)
 
         loadMode = self.config.getOption('load')
+        if loadMode is None:
+            loadMode = self.system_tree.get('runner/boot-mode')
 
-        if loadMode == None: 
+        if loadMode == None or loadMode == 'default': 
             if self.pulpArchi.find('pulpissimo') != -1 or self.pulpArchi == 'pulp' or self.pulpArchi == 'vivosoc3':
                 loadMode = 'jtag'
             elif self.pulpArchi.find('gap') == -1 and self.pulpArchi.find('wolfe') == -1 and self.pulpArchi != 'quentin':
@@ -430,9 +433,9 @@ class Runner(Platform):
         if self.pulpArchi == 'vivosoc3':
             self.simArgs.append("-gBOOT_ADDR=32'h1C008000")
 
-        if self.system_tree.get('loader/bridge') == 'debug-bridge':
-            self.simArgs.append('-gENABLE_DEBUG_BRIDGE=1')
-            exportVarCmd = "%s export VSIM_EXIT_SIGNAL=/tb/dev_dpi/i_dev_dpi/exit_status;" % (exportVarCmd)
+        #if self.system_tree.get('loader/bridge') == 'debug-bridge':
+        #    self.simArgs.append('-gENABLE_DEBUG_BRIDGE=1')
+        #    exportVarCmd = "%s export VSIM_EXIT_SIGNAL=/tb/dev_dpi/i_dev_dpi/exit_status;" % (exportVarCmd)
 
         #if self.system_tree.get('loader/bridge') == 'debug-bridge'or self.system_tree.get('dpi_models') is not None:
         #    exportVarCmd = "%s export PULP_CONFIG_FILE=%s;" % (exportVarCmd, self.config.getOption('configFile'))
@@ -485,8 +488,8 @@ class Runner(Platform):
             devices = self.config.getOption('devices')
             if len(devices) != 0:
                 os.environ['PLP_DEVICES'] = ':'.join(devices)
-            if 'controller' in devices:                
-                self.simArgs.append('-gENABLE_DEBUG_BRIDGE=1')
+            #if 'controller' in devices:                
+            #    self.simArgs.append('-gENABLE_DEBUG_BRIDGE=1')
 
         if self.system_tree.get('pulp_chip') == 'pulpissimo':
             if self.system_tree.get('fc/core') == 'ri5ky_v2_fpu':
