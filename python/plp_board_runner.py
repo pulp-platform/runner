@@ -85,7 +85,7 @@ class Runner(Platform):
 
         if self.system_tree.get('pulp_chip') in ['fulmine', 'gap', 'wolfe']:
             if self.system_tree.get('pulp_chip') in ['gap']:
-                return execCmd('plpbridge --verbose --boot-mode=jtag --binary=%s --chip=gap load ioloop start wait' % (binary))
+                return execCmd('plpbridge --verbose --cable=ftdi@digilent --boot-mode=jtag --binary=%s --chip=gap load ioloop start wait' % (binary))
             else:
                 return execCmd('plpbridge --verbose --binary=%s --config=%s load ioloop start wait' % (binary, self.config.getOption('configFile')))
 
