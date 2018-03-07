@@ -373,7 +373,7 @@ class Runner(Platform):
             self.simArgs.append('+VSIM_PADMUX_CFG=TB_PADMUX_ALT3_HYPERBUS')
 
         if self.system_tree.get('tb_comps') is not None:
-            self.simArgs.append('-gCONFIG_FILE=%s' % self.config.getOption('configFile'))
+            self.simArgs.append('-gCONFIG_FILE=%s -permit_unmatched_virtual_intf' % self.config.getOption('configFile'))
             self.simArgs.append('-sv_lib %s/install/ws/lib/libpulpdpi' % (os.environ.get('PULP_SDK_HOME')))
 
         if self.config.getOption('vsimGpioLoopback'):
