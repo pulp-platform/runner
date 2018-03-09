@@ -375,6 +375,8 @@ class Runner(Platform):
         if self.system_tree.get('tb_comps') is not None:
             self.simArgs.append('-gCONFIG_FILE=%s -permit_unmatched_virtual_intf' % self.config.getOption('configFile'))
             self.simArgs.append('-sv_lib %s/install/ws/lib/libpulpdpi' % (os.environ.get('PULP_SDK_HOME')))
+        else:
+            self.simArgs.append('-permit_unmatched_virtual_intf')
 
         if self.config.getOption('vsimGpioLoopback'):
             exportVarCmd = "%s export VSIM_PADMUX_CFG=TB_PADMUX_GPIO_LOOPBACK;" % (exportVarCmd)
@@ -431,7 +433,7 @@ class Runner(Platform):
             self.simArgs.append('-gLOAD_L2=STANDALONE')
 
         if self.pulpArchi == 'vivosoc3':
-            self.simArgs.append("-gBOOT_ADDR=32'h1C008000")
+            self.simArgs.append("-gBOOT_ADDR=32'h1C004000")
 
         #if self.system_tree.get('loader/bridge') == 'debug-bridge':
         #    self.simArgs.append('-gENABLE_DEBUG_BRIDGE=1')
