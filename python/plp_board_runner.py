@@ -84,10 +84,14 @@ class Runner(Platform):
 
 
         if self.system_tree.get('pulp_chip') in ['fulmine', 'gap', 'wolfe']:
+
+            commands = " ".join(self.system_tree.get('debug-bridge/commands').split(','))
+
+
             if self.system_tree.get('pulp_chip') in ['gap']:
-                return execCmd('plpbridge --verbose --cable=ftdi@digilent --boot-mode=jtag --binary=%s --chip=gap load ioloop start wait' % (binary))
+                return execCmd('plpbridge --verbose --cable=ftdi@digilent --boot-mode=jtag --binary=%s --chip=gap %s' % (binary, commands))
             else:
-                return execCmd('plpbridge --verbose --binary=%s --config=%s load ioloop start wait' % (binary, self.config.getOption('configFile')))
+                return execCmd('plpbridge --verbose --binary=%s --config=%s %s' % (binary, self.config.getOption('configFile'), commands))
 
         elif self.config.getOption('pulpArchi') == 'pulp3':
             return execCmd("debug_bridge -c ft2232 -b %s --binary %s --load --late-reset --loop --printf --start %s %s" % (self.config.getOption('pulpArchi').replace('-riscv', ''), binary, mask, flashOpt))
