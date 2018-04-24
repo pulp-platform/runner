@@ -85,7 +85,10 @@ class Runner(Platform):
     def prepare(self):
         binary = self.config.getOption('binary')
         if binary != None:
-            return binaryTools.genSectionBinaries(binary, os.path.dirname(binary), self.system_tree.get('pe/archi'))
+            archi = self.system_tree.get('pe/archi')
+            if archi is None:
+                archi = self.system_tree.get('fc/archi')
+            return binaryTools.genSectionBinaries(binary, os.path.dirname(binary), archi)
         else: return -1
 
     def reset(self):

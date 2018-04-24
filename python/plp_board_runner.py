@@ -6,6 +6,7 @@ import os
 import os.path
 import time
 import binary_tools as binaryTools
+import plptree
 
 def execCmd(cmd):
     print ('Executing command: ' + cmd)
@@ -41,6 +42,9 @@ class Runner(Platform):
         self.addCommand('run', 'Run execution')
         self.addCommand('prepare', 'Prepare binary')
         self.addCommand('copy', 'Copy binary')
+
+
+        self.system_tree = plptree.get_configs_from_file(self.config.getOption('configFile'))[0]
 
     def reset(self):
         return 0
@@ -79,7 +83,17 @@ class Runner(Platform):
             flashOpt = ''
 
 
-        if self.config.getOption('pulpArchi') == 'pulp3':
+        if self.system_tree.get('pulp_chip') in ['fulmine', 'gap', 'wolfe']:
+
+            commands = " ".join(self.system_tree.get('debug-bridge/commands').split(','))
+
+
+            if self.system_tree.get('pulp_chip') in ['gap']:
+                return execCmd('plpbridge --cable=ftdi@digilent --boot-mode=jtag --binary=%s --chip=gap %s' % (binary, commands))
+            else:
+                return execCmd('plpbridge --binary=%s --config=%s %s' % (binary, self.config.getOption('configFile'), commands))
+
+        elif self.config.getOption('pulpArchi') == 'pulp3':
             return execCmd("debug_bridge -c ft2232 -b %s --binary %s --load --late-reset --loop --printf --start %s %s" % (self.config.getOption('pulpArchi').replace('-riscv', ''), binary, mask, flashOpt))
         else:
             if self.config.getOption('avrLoader'):

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # ////////////////////////////////////////////////////////////////////////////////
 # // Company:        Multitherman Laboratory @ DEIS - University of Bologna     //
@@ -100,7 +100,7 @@ class FlashStimFile(object):
 
         index = 0
         for area in areas:
-            area.nbBlocks = (area.size + self.blockSize - 1) / self.blockSize
+            area.nbBlocks = int((area.size + self.blockSize - 1) / self.blockSize)
             area.offset = flashOffset
             flashOffset += area.nbBlocks * 4096
             print ("  Area %d: offset: 0x%x, base: 0x%x, size: 0x%x, nbBlocks: %d" % (index, area.offset, area.base, area.size, area.nbBlocks))
@@ -173,7 +173,7 @@ stimuli = Stimuli()
 # Function to dump single bytes of a string to a file
 ###############################################################################
 def dump_bytes( filetoprint, addr, data_s):
-    for i in xrange(0,4,1):
+    for i in range(0,4,1):
         filetoprint.write("@%08X %s\n" % ( addr+i,  data_s[(3-i)*2:((3-i)+1)*2] ))
     return 4
 
@@ -189,8 +189,9 @@ def s19_parse(filename, s19_dict):
         if rec_field == "S0" or prefix == "S009" or prefix == "S505" or prefix == "S705" or prefix == "S017" or prefix == "S804" or line == "":
             continue
 
-        data = line[-6:-4] # extract data byte
-        str_addr = line[4:-6]
+
+        data = line[-5:-3] # extract data byte
+        str_addr = line[4:-5]
 
         addr = int("0x%s" % str_addr, 0)
 
@@ -231,7 +232,7 @@ def bytes_to_words(byte_dict, word_dict):
 # Start of file
 ###############################################################################
 if(len(sys.argv) < 2):
-    print "Usage s19toslm.py FILENAME"
+    print ("Usage s19toslm.py FILENAME")
     quit()
 
 archi = None
