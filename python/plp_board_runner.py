@@ -83,7 +83,7 @@ class Runner(Platform):
             flashOpt = ''
 
 
-        if self.system_tree.get('pulp_chip') in ['fulmine', 'gap', 'wolfe']:
+        if self.system_tree.get('pulp_chip') in ['fulmine', 'gap', 'wolfe', 'vivosoc2', 'vivosoc2_1']:
 
             commands = " ".join(self.system_tree.get('debug-bridge/commands').split(','))
 
