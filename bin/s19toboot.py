@@ -172,7 +172,7 @@ for addr in sorted(slm_dict.keys()):
             else:
                 data_odd  = data
                 if archi == 'GAP': rom_file.write("@%x %s%s\n" % ((addr & 0xffff) / 2, data_odd, data_even))
-                elif archi == 'wolfe' or archi == 'quentin' or archi == 'devchip':
+                elif archi == 'vega' or archi == 'wolfe' or archi == 'quentin' or archi == 'devchip':
                     rom_file.write("{0:032b}\n" .format(int('0x' + data_even, 16)))
                     rom_file.write("{0:032b}\n" .format(int('0x' + data_odd,  16)))
                     #rom_file.write("@%x %s\n" % ((addr & 0xffff)-1, data_even))
