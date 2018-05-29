@@ -402,7 +402,7 @@ class Runner(Platform):
 
         loadMode = self.config.getOption('load')
         if loadMode is None:
-            loadMode = self.system_tree.get('runner/boot-mode')
+            loadMode = self.system_tree.get('loader/boot/mode')
 
         if loadMode == None or loadMode == 'default': 
             if self.pulpArchi.find('pulpissimo') != -1 or self.pulpArchi == 'pulp' or self.pulpArchi == 'vivosoc3':

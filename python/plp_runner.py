@@ -196,7 +196,6 @@ class Runner(object):
             retval = platform.handleCommands()
             return retval
         except Exception as e:
-            raise
             if self.pyStack:
                 raise
             else:
