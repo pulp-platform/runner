@@ -41,7 +41,7 @@ runner.addPlatform('stm32', getRunnerPath('plp_stm32_runner.py'))
 runner.addPlatform('gvsoc', getRunnerPath('gv_runner.py'))
 runner.addPlatform('vp', getRunnerPath('vp_runner.py'))
 runner.addPlatform('board', getRunnerPath('plp_board_runner.py'))
-runner.addPlatform('rtl', getRunnerPath('plp_rtl_runner.py'))
+runner.addPlatform('rtl', getRunnerPath('runner/rtl/runner.py'))
 runner.addPlatform('hsa', getRunnerPath('plp_hsa_runner.py'))
 runner.addPlatform('fpga', getRunnerPath('plp_rtl_emu_runner.py'))
 

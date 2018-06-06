@@ -9,9 +9,9 @@ import time
 
 class Runner(Platform):
 
-    def __init__(self, config):
+    def __init__(self, config, tree):
 
-        super(Runner, self).__init__(config)
+        super(Runner, self).__init__(config, tree)
         
         parser = config.getParser()
 

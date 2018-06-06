@@ -27,6 +27,7 @@ import sys
 import re
 import imp
 import plptree
+import json_tools as js
 
 class Property(object):
     def __init__(self, path, className, compName, propertyName, value):
@@ -143,6 +144,8 @@ class Runner(object):
         self.parser.add_argument('command', metavar='commands', type=str, nargs='*',
                             help='a command to be executed')
 
+        self.parser.add_argument("--chip", dest="chip", default=None, help="Specify target chip")
+
         self.config.addOption("--dev", dest="dev", action="store_true", default=False,
                          help="activate development mode (more advanced options)")
 
@@ -182,13 +185,41 @@ class Runner(object):
         self.pyStack = self.system_tree.get_bool('runner/py-stack')
 
 
+
+        # First get the json configuration
+        config_path = self.config.getOption('configFile')
+
+        if config_path is not None:
+            # Either it is specified and then just process it, everything is specified 
+            # inside and all arguments are ignored
+            config = js.import_config_from_file(config_path)
+        elif self.config.getOption('chip') is not None:
+            # Or a chip is given, in this case, import the configuration for this chip
+            chip = self.config.getOption('chip')
+            try:
+                configs = plptree.get_configs_from_env(configs=["system=%s" % chip])
+                config = js.import_config(configs[0].get_dict())
+            except:
+                config = js.import_config({"pulp_chip": { chip: { "name": chip } } })
+
+            with open('myconfig.json', 'w') as file:
+                file.write(config.dump_to_string())
+
+        else:
+            raise Exception('A chip or a config file must be specified')
+
+
+
+
+
+
         try:
 
             module = imp.load_source('module', self.platforms[self.config.getOption('platform')])
 
             
 
-            platform = module.Runner(self.config)
+            platform = module.Runner(self.config, config)
 
             for module in self.modules:
                 platform.addParser(module(self.config, self.system_tree))

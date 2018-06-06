@@ -26,10 +26,11 @@ import ast
 
 class Platform(object):
 
-    def __init__(self, config):
+    def __init__(self, config, tree):
         self.commands = []
         self.modules = []
         self.config = config
+        self.tree = tree
 
     def addParser(self, parser):
         self.modules.append(parser)

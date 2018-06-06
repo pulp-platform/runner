@@ -323,6 +323,12 @@ class FlashImage(object):
                 file.write(self.buff)
 
         if self.stimuli != None:
+
+            try:
+                os.makedirs(os.path.dirname(self.stimuli))
+            except:
+                pass
+
             with open(self.stimuli, 'w') as file:
                 if self.flashType == 'hyper':
                     if len(self.buff) & 1 != 0:
