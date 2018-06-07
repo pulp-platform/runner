@@ -178,6 +178,9 @@ class Runner(Platform):
             else:
                 tcl_args_str = ''
 
+            if gui:
+                tcl_args_str = "export VOPT_ACC_ENA=YES; " + tcl_args_str
+
 
             cmd = "%svsim -64 %s" % (tcl_args_str, ' '.join(vsim_args))
 
