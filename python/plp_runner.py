@@ -127,7 +127,7 @@ class Runner(object):
     def run(self):
         self.config.addOption("--help", dest="showHelp", action="store_true", help="show this help message and exit")
 
-        self.config.addOption("--platform", dest="platform", default='gvsoc', choices=list(self.platforms.keys()), help="specify the platform. Default: %(default)s.")
+        self.config.addOption("--platform", dest="platform", default=None, choices=list(self.platforms.keys()), help="specify the platform. Default: %(default)s.")
     
         self.config.addOption("--prop", dest="props", action="append",
                          help="specify a property to be given to the platform", metavar="PATH")
@@ -188,34 +188,34 @@ class Runner(object):
 
         # First get the json configuration
         config_path = self.config.getOption('configFile')
+        chip = self.config.getOption('chip')
 
-        if config_path is not None:
-            # Either it is specified and then just process it, everything is specified 
-            # inside and all arguments are ignored
-            config = js.import_config_from_file(config_path)
-        elif self.config.getOption('chip') is not None:
-            # Or a chip is given, in this case, import the configuration for this chip
-            chip = self.config.getOption('chip')
-            try:
-                configs = plptree.get_configs_from_env(configs=["system=%s" % chip])
-                config = js.import_config(configs[0].get_dict())
-            except:
-                config = js.import_config({"pulp_chip": { chip: { "name": chip } } })
-
-            with open('myconfig.json', 'w') as file:
-                file.write(config.dump_to_string())
-
-        else:
+        if chip is not None:
+            config_path = os.path.join(
+                os.path.dirname(os.path.dirname(sys.argv[0])),
+                'configs', 'systems', '%s.json' % chip
+            )
+        elif config_path is None:
             raise Exception('A chip or a config file must be specified')
 
+        config = js.import_config_from_file(config_path)
 
 
+        platform = self.config.getOption('platform')
+        if platform is not None:
+            config.set('platform', platform)
 
 
+        self.system_tree = plptree.get_config_tree_from_dict(config.get_dict())
+
+        platform_name = config.get('**/platform').get()
+
+        if platform_name == 'gvsoc' and self.system_tree.get('pulp_chip') in ['pulp', 'pulpissimo', 'oprecompkw']:
+            platform_name = 'vp'
 
         try:
 
-            module = imp.load_source('module', self.platforms[self.config.getOption('platform')])
+            module = imp.load_source('module', self.platforms[platform_name])
 
             
 

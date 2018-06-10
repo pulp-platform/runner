@@ -32,6 +32,9 @@ class Platform(object):
         self.config = config
         self.tree = tree
 
+    def get_json(self):
+        return self.tree
+
     def addParser(self, parser):
         self.modules.append(parser)
 

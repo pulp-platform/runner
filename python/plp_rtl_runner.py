@@ -201,7 +201,8 @@ class Runner(Platform):
 
         os.environ['PULP_CORE'] = self.pulpCore
 
-        binary = self.config.getOption('binary')
+        binary = self.get_json().get('**/loader/binaries').get_elem(0).get()
+
         if binary != None:
             print ('Generating stimuli for binary: ' + binary)
 
@@ -253,13 +254,13 @@ class Runner(Platform):
                 if self.system_tree.get('boot_from_rom'):
                     flashType = 'spi'
                     if self.config.getOption('hyper') or self.config.getOption('load') == 'hyper': flashType = 'hyper'
-                    if plp_flash_stimuli.genFlashImage(slmStim='slm_files/flash_stim.slm', bootBinary=self.config.getOption('binary'), comps=comps, verbose=True, archi=self.pulpArchi, encrypt=self.config.getOption('encrypt'), aesKey=self.aesKey, aesIv=self.aesIv, flashType=flashType): return -1
+                    if plp_flash_stimuli.genFlashImage(slmStim='slm_files/flash_stim.slm', bootBinary=binary, comps=comps, verbose=True, archi=self.pulpArchi, encrypt=self.config.getOption('encrypt'), aesKey=self.aesKey, aesIv=self.aesIv, flashType=flashType): return -1
             else:
                 if self.system_tree.get('boot_from_rom'):
-                    if plp_flash_stimuli.genFlashImage(slmStim='slm_files/flash_stim.slm', bootBinary=self.config.getOption('binary'), comps=comps, verbose=True, archi=self.pulpArchi, encrypt=self.config.getOption('encrypt'), aesKey=self.aesKey, aesIv=self.aesIv, flashType='spi'): return -1
+                    if plp_flash_stimuli.genFlashImage(slmStim='slm_files/flash_stim.slm', bootBinary=binary, comps=comps, verbose=True, archi=self.pulpArchi, encrypt=self.config.getOption('encrypt'), aesKey=self.aesKey, aesIv=self.aesIv, flashType='spi'): return -1
 
                 if self.config.getOption('load') == 'hyper' or self.config.getOption('hyper'):
-                    if plp_flash_stimuli.genFlashImage(slmStim='slm_files/hyper_flash_stim.slm', bootBinary=self.config.getOption('binary'), comps=comps, verbose=True, archi=self.pulpArchi, encrypt=self.config.getOption('encrypt'), aesKey=self.aesKey, aesIv=self.aesIv, flashType='hyper'): return -1
+                    if plp_flash_stimuli.genFlashImage(slmStim='slm_files/hyper_flash_stim.slm', bootBinary=binary, comps=comps, verbose=True, archi=self.pulpArchi, encrypt=self.config.getOption('encrypt'), aesKey=self.aesKey, aesIv=self.aesIv, flashType='hyper'): return -1
 
 
         if self.config.getOption('flash') != None:
@@ -372,7 +373,7 @@ class Runner(Platform):
         if self.config.getOption('hyper'):
             self.simArgs.append('+VSIM_PADMUX_CFG=TB_PADMUX_ALT3_HYPERBUS')
 
-        if self.system_tree.get('tb_comps') is not None:
+        if self.system_tree.get('tb_comps') is not None and self.system_tree.get('testbench/use_dpi'):
             self.simArgs.append('-gCONFIG_FILE=%s -permit_unmatched_virtual_intf' % self.config.getOption('configFile'))
             self.simArgs.append('-sv_lib %s/install/ws/lib/libpulpdpi' % (os.environ.get('PULP_SDK_HOME')))
         else:

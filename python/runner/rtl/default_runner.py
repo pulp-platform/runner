@@ -70,7 +70,7 @@ class Runner(Platform):
 
             if plp_flash_stimuli.genFlashImage(
                 slmStim=self.tree.get('**/runner/flash_slm_file').get(),
-                bootBinary=self.tree.get('**/runner/binary').get(),
+                bootBinary=self.get_json().get('**/loader/binaries').get_elem(0).get(),
                 comps=comps,
                 verbose=self.tree.get('**/runner/verbose').get(),
                 archi=self.tree.get('**/pulp_chip_family').get(),
