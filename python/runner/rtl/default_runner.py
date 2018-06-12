@@ -21,6 +21,11 @@
 from plp_platform import *
 import plp_flash_stimuli
 from efuse import *
+import time
+import sys
+import subprocess
+import shlex
+import io
 
 
 # This class is the default runner for all chips but can be overloaded
@@ -55,7 +60,7 @@ class Runner(Platform):
         if self.config.getOption('boot from flash'):
             tree.get('**/runner').set('boot from flash', True)
 
-
+        self.env = {}
         self.rtl_path = None
 
 
@@ -81,13 +86,66 @@ class Runner(Platform):
 
 
     def run(self):
+
+        gdb = self.get_json().get('**/gdb/active')
+        autorun = self.tree.get('**/debug_bridge/autorun')
+
+        if gdb is not None and gdb.get_bool() or autorun is not None and autorun.get_bool():
+            self.get_json().get('**/jtag_proxy').set('active', True)
+            self.get_json().get('**/runner').set('use_tb_comps', True)
+            self.get_json().get('**/runner').set('use_external_tb', True)
+
+        with open('rtl_config.json', 'w') as file:
+            file.write(self.get_json().dump_to_string())
+
+
+
         cmd = self.__get_sim_cmd()
 
-        print ('Launching VSIM with command:')
-        print (cmd)
-        if os.system(cmd) != 0: 
-            print ('VSIM reported an error, leaving')
-            return -1
+        autorun = self.tree.get('**/debug_bridge/autorun')
+        if autorun is not None and autorun.get():
+            print ('Setting VSIM env')
+            print (self.env)
+            os.environ.update(self.env)
+
+            print ('Launching VSIM with command:')
+            print (cmd)
+            vsim = subprocess.Popen(shlex.split(cmd),stderr=subprocess.PIPE, bufsize=1)
+            port = None
+            for line in io.TextIOWrapper(vsim.stderr, encoding="utf-8"):
+                sys.stderr.write(line)
+                string = 'Proxy listening on port '
+                pos = line.find(string)
+                if pos != -1:
+                    port = line[pos + len(string):]
+                    break
+
+            if port is None:
+                return -1
+
+            bridge_cmd = 'plpbridge --config=rtl_config.json --verbose=10 --port=%s' % port
+            print ('Launching bridge with command:')
+            print (bridge_cmd)
+            time.sleep(5)
+            bridge = subprocess.Popen(shlex.split(bridge_cmd))
+            
+            retval = bridge.wait()
+            vsim.terminate()
+
+            return retval
+
+        else:
+            for key, value in self.env.items():
+                cmd = 'export %s="%s" && ' % (key, value) + cmd
+
+            print ('Launching VSIM with command:')
+            print (cmd)
+
+            if os.system(cmd) != 0: 
+                print ('VSIM reported an error, leaving')
+                return -1
+
+        
 
         return 0
 
@@ -135,6 +193,10 @@ class Runner(Platform):
 
         return self.rtl_path
 
+
+    def set_env(self, key, value):
+        self.env[key] = value
+
     def __get_sim_cmd(self):
 
         simulator = self.tree.get('**/runner/rtl_simulator').get()
@@ -155,17 +217,28 @@ class Runner(Platform):
                 vsim_args.append("-do 'source %s/tcl_files/%s; run_and_exit;'" % (self.__get_rtl_path(), vsim_script))
 
 
+            if not self.tree.get('**/runner/boot_from_flash').get():
+                tcl_args.append('-gLOAD_L2=JTAG')
+
+            autorun = self.tree.get('**/debug_bridge/autorun')
+            if self.tree.get('**/runner/use_external_tb').get() or \
+              autorun is not None and autorun.get():
+                tcl_args.append('-gENABLE_EXTERNAL_DRIVER=1')
+
             if self.tree.get('**/runner/boot_from_flash').get() and \
                self.tree.get('**/runner/flash_type').get() == 'spi':
                 tcl_args.append('-gSPI_FLASH_LOAD_MEM=1')
 
-            if self.tree.get('**/tb_comps') is not None:
-                tcl_args.append('-gCONFIG_FILE=%s -permit_unmatched_virtual_intf' % self.config.getOption('configFile'))
+            if self.tree.get('**/use_tb_comps').get():
+                tcl_args.append('-gCONFIG_FILE=rtl_config.json -permit_unmatched_virtual_intf')
                 tcl_args.append('-sv_lib %s/install/ws/lib/libpulpdpi' % (os.environ.get('PULP_SDK_HOME')))
 
                 if os.environ.get('QUESTA_CXX') != None:
                     tcl_args.append('-dpicpppath ' + os.environ.get('QUESTA_CXX'))
 
+            else:
+                tcl_args.append('-permit_unmatched_virtual_intf')
+                
 
             if self.tree.get('**/efuse') is not None:
               if efuse_genStimuli_fromOption([], 1024, 'efuse_preload.data', self.tree.get('**/runner/boot-mode').get()) != None:
@@ -174,15 +247,15 @@ class Runner(Platform):
 
 
             if len(tcl_args) != 0:
-                tcl_args_str = 'export VSIM_RUNNER_FLAGS="%s" && ' % ' '.join(tcl_args)
-            else:
-                tcl_args_str = ''
+                #tcl_args_str = 'export VSIM_RUNNER_FLAGS="%s" && ' % ' '.join(tcl_args)
+                self.set_env('VSIM_RUNNER_FLAGS', ' '.join(tcl_args))
 
             if gui:
-                tcl_args_str = "export VOPT_ACC_ENA=YES; " + tcl_args_str
+                #tcl_args_str = "export VOPT_ACC_ENA=YES; " + tcl_args_str
+                self.set_env('VOPT_ACC_ENA', 'YES')
 
 
-            cmd = "%svsim -64 %s" % (tcl_args_str, ' '.join(vsim_args))
+            cmd = "vsim -64 %s" % (' '.join(vsim_args))
 
 
             return cmd
