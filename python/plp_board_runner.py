@@ -85,7 +85,12 @@ class Runner(Platform):
 
         if self.system_tree.get('pulp_chip') in ['fulmine', 'gap', 'wolfe', 'vivosoc2', 'vivosoc2_1']:
 
-            commands = " ".join(self.system_tree.get('debug_bridge/commands').split(','))
+            if self.get_json().get('**/gdb/active').get_bool():
+                commands_name = 'debug_bridge/gdb_commands'
+            else:
+                commands_name = 'debug_bridge/commands'
+
+            commands = " ".join(self.system_tree.get(commands_name).split(','))
 
 
             if self.system_tree.get('pulp_chip') in ['gap']:
