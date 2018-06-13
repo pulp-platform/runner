@@ -26,6 +26,7 @@ import sys
 import subprocess
 import shlex
 import io
+import runner.stim_utils
 
 
 # This class is the default runner for all chips but can be overloaded
@@ -68,6 +69,10 @@ class Runner(Platform):
 
         if self.tree.get('**/runner/boot_from_flash').get():
 
+            # Boot from flash, we need to generate the flash image
+            # containing the application binary.
+            # This will generate SLM files used by the RTL platform
+            # to preload the flash.
             comps = []
             fs = self.tree.get('**/fs')
             if fs is not None:
@@ -81,6 +86,16 @@ class Runner(Platform):
                 archi=self.tree.get('**/pulp_chip_family').get(),
                 flashType=self.tree.get('**/runner/flash_type').get()):
                 return -1
+
+        else:
+
+            stim = runner.stim_utils.stim()
+
+            for binary in self.get_json().get('**/loader/binaries').get_dict():
+                stim.add_binary(binary)
+
+            stim.gen_stim_64('vectors/stim.txt')
+
 
         return 0
 

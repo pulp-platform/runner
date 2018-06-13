@@ -154,6 +154,8 @@ class Runner(object):
 
         self.config.addOption("--config", dest="config", default=None, help='specify the system configuration')
 
+        self.config.addOption("--reentrant", dest="reentrant", action="store_true", help='This script was called was pulp-run')
+
         self.config.addOption("--config-file", dest="configFile", default=None, help='specify the system configuration file')
 
         self.config.addOption("--config-opt", dest="configOpt", default=[], action="append", help='specify configuration option')
