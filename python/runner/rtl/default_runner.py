@@ -219,8 +219,8 @@ class Runner(Platform):
         if simulator == 'vsim':
 
             vsim_script = self.tree.get('**/vsim/script').get()
-            tcl_args = self.tree.get('**/vsim/tcl_args').get()
-            vsim_args = self.tree.get('**/vsim/args').get()
+            tcl_args = self.tree.get('**/vsim/tcl_args').get_dict()
+            vsim_args = self.tree.get('**/vsim/args').get_dict()
             gui = self.tree.get('**/vsim/gui').get()
 
             if gui:
