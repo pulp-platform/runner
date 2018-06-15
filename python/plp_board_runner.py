@@ -97,6 +97,8 @@ class Runner(Platform):
                 return execCmd('plpbridge --cable=ftdi@digilent --boot-mode=jtag --binary=%s --chip=gap %s' % (binary, commands))
             elif self.system_tree.get('pulp_chip') in ['wolfe']:
                 return execCmd('plpbridge --boot-mode=jtag --binary=%s --chip=wolfe %s' % (binary, commands))
+            elif self.system_tree.get('pulp_chip') in ['vivosoc3']:
+                return execCmd('plpbridge --cable=ftdi --binary=%s --chip=vivosoc3 %s' % (binary, commands))
             else:
                 return execCmd('plpbridge --binary=%s --config=%s %s' % (binary, self.config.getOption('configFile'), commands))
 
