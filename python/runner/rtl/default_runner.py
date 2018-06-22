@@ -100,15 +100,31 @@ class Runner(Platform):
         return 0
 
 
-    def run(self):
+    def __check_debug_bridge(self):
 
         gdb = self.get_json().get('**/gdb/active')
         autorun = self.tree.get('**/debug_bridge/autorun')
 
+        bridge_active = False
+
         if gdb is not None and gdb.get_bool() or autorun is not None and autorun.get_bool():
+            bridge_active = True
             self.get_json().get('**/jtag_proxy').set('active', True)
             self.get_json().get('**/runner').set('use_tb_comps', True)
             self.get_json().get('**/runner').set('use_external_tb', True)
+
+
+        if bridge_active:
+            # Increase the access timeout to not get errors as the RTL platform
+            # is really slow
+            self.tree.get('**/debug_bridge/cable').set('access_timeout_us', 10000000)
+
+
+
+    def run(self):
+
+        self.__check_debug_bridge()
+
 
         with open('rtl_config.json', 'w') as file:
             file.write(self.get_json().dump_to_string())

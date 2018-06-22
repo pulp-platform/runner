@@ -25,7 +25,7 @@ import runner.rtl.default_runner
 
 
 def get_runner(chip):
-    if chip in ['vega', 'pulpissimo', 'gap', 'wolfe']:
+    if chip in ['vega', 'pulpissimo', 'pulp', 'gap', 'wolfe']:
         return runner.rtl.default_runner.Runner
     return None
 
