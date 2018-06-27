@@ -157,7 +157,7 @@ class Runner(Platform):
             bridge_cmd = 'plpbridge --config=rtl_config.json --verbose=10 --port=%s' % port
             print ('Launching bridge with command:')
             print (bridge_cmd)
-            time.sleep(5)
+            time.sleep(10)
             bridge = subprocess.Popen(shlex.split(bridge_cmd))
             
             retval = bridge.wait()
