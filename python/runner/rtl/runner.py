@@ -20,13 +20,20 @@
 
 from plp_platform import *
 import plp_rtl_runner
-import runner.rtl.default_runner
+import runner.rtl.vsim_runner
+import runner.rtl.xcelium_runner
 
 
 
-def get_runner(chip):
+def get_runner(chip, tree):
     if chip in ['vega', 'pulpissimo', 'pulp', 'gap', 'wolfe']:
-        return runner.rtl.default_runner.Runner
+        sim = tree.get_child_str('**/runner/simulator')
+        if sim in [ None, 'vsim' ]:
+            return runner.rtl.vsim_runner.Runner
+        elif sim == 'xcelium':
+            return runner.rtl.xcelium_runner.Runner
+        else:
+            raise Exception('Unknown RTL simulator: ' + sim)
     return None
 
 
@@ -38,7 +45,7 @@ class Runner(Platform):
 
     def __new__(cls, config, tree):
 
-        runner = get_runner(tree.get('**/pulp_chip_family').get())
+        runner = get_runner(tree.get('**/pulp_chip_family').get(), tree)
         if runner is None:
             return plp_rtl_runner.Runner(config, tree)
         else:
