@@ -212,7 +212,7 @@ class Runner(object):
 
         platform_name = config.get('**/platform').get()
 
-        if platform_name == 'gvsoc' and self.system_tree.get('pulp_chip') in ['pulp', 'pulpissimo', 'oprecompkw', 'multino', 'oprecompkw_sa']:
+        if platform_name == 'gvsoc' and self.system_tree.get('pulp_chip') in ['pulp', 'pulpissimo', 'oprecompkw', 'multino', 'oprecompkw_sa', 'bigpulp', 'bigpulp-z-7045']:
             platform_name = 'vp'
 
         try:
