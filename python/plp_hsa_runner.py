@@ -66,5 +66,5 @@ class Runner(Platform):
             file.write(l2_data)
 
 
-        return os.system("hsa_run_riscv_new %s %s" % (self.config.getOption('dir'), binary))
+        return os.system("hsa_run_riscv %s %s" % (self.config.getOption('dir'), binary))
 
