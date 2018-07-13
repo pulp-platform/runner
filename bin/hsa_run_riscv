@@ -45,16 +45,21 @@ rm -f flash_stim.slm
 ###########
 # copy
 ###########
-
+SKIP=0
 if [ -z "${SCP_TARGET_MACHINE}" ]; then
-    echo "SCP_TARGET_MACHINE must be defined"
-    exit 1
+    echo "SCP_TARGET_MACHINE missing"
+    echo "skipping copy to the device..."
+    SKIP=1
 fi
 
 if [ -z "${SCP_TARGET_PATH}" ]; then
-    echo "SCP_TARGET_PATH must be defined"
-    exit 1
+    echo "SCP_TARGET_PATH missing"
+    echo "skipping copy to the device..."
+    SKIP=1
 fi
 
-scp ${APP}.tcdm.bin ${SCP_TARGET_MACHINE}:${SCP_TARGET_PATH}/${APP_NAME}/${APP_NAME}.tcdm.bin
-scp ${APP}.l2.bin ${SCP_TARGET_MACHINE}:${SCP_TARGET_PATH}/${APP_NAME}/${APP_NAME}.l2.bin
+if [ "${SKIP}" -eq "0" ]; then
+	ssh ${SCP_TARGET_MACHINE} mkdir -p ${SCP_TARGET_PATH}/${APP_NAME}
+	scp -r ${APP}.tcdm.bin ${SCP_TARGET_MACHINE}:${SCP_TARGET_PATH}/${APP_NAME}/${APP_NAME}.tcdm.bin
+	scp -r ${APP}.l2.bin ${SCP_TARGET_MACHINE}:${SCP_TARGET_PATH}/${APP_NAME}/${APP_NAME}.l2.bin
+fi
