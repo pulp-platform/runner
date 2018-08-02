@@ -256,7 +256,7 @@ bytes_to_words(s19_dict, slm_dict)
 
 stimuli.regFile("tcdm.slm",    0x10000000, 128 * 1024)
 stimuli.regFile("fcTcdm.slm",  0x1B000000, 64 * 1024)
-stimuli.regFile("l2_stim.slm", 0x1C000000, 512 * 1024)
+stimuli.regFile("l2_stim.slm", 0x1C000000, 16 * 1024 * 1024)
 stimuli.regFile(None         , 0x1A000000, 64 * 1024)
 
 if archi != 'GAP':
