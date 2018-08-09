@@ -123,6 +123,9 @@ class Runner(Platform):
 
     def run(self):
 
+        if self.get_json().get('**/runner/peripherals') is not None:
+            self.get_json().get('**/runner').set('use_tb_comps', True)
+
         self.__check_debug_bridge()
 
 
