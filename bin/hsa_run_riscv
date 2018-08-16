@@ -35,11 +35,9 @@ $PULP_SDK_HOME/install/ws/bin/s19toslm.py ${BUILD_DIR}/${APP}.s19
 ${toolchain}/bin/riscv32-unknown-elf-objdump -DS ${BUILD_DIR}/${APP} > ${APP}.read
 
 # cleanup
-rm -f tcdm*
 rm -f l2_ram_cut1*
 rm -f l2_ram_cut2*
 rm -f l2_ram_cut3*
-rm -f l2_stim.slm
 rm -f flash_stim.slm
 
 ###########
