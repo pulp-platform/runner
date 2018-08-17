@@ -259,9 +259,17 @@ class Runner(Platform):
               autorun is not None and autorun.get():
                 tcl_args.append('-gENABLE_EXTERNAL_DRIVER=1')
 
-            if self.tree.get('**/runner/boot_from_flash').get() and \
-               self.tree.get('**/runner/flash_type').get() == 'spi':
+            if self.tree.get('**/runner/boot_from_flash').get():
+              if self.tree.get('**/runner/flash_type').get() == 'spi':
                 tcl_args.append('-gSPI_FLASH_LOAD_MEM=1')
+              elif self.tree.get('**/runner/flash_type').get() == 'hyper':
+                tcl_args.append('-gHYPER_FLASH_LOAD_MEM=1')
+
+                if self.tree.get_child_str('**/chip/name') == 'gap':
+                    tcl_args.append('+VSIM_PADMUX_CFG=TB_PADMUX_ALT3_HYPERBUS')
+                    tcl_args.append('+VSIM_BOOTTYPE_CFG=TB_BOOT_FROM_HYPER_FLASH')
+
+
 
             if self.tree.get('**/use_tb_comps').get():
                 tcl_args.append('-gCONFIG_FILE=rtl_config.json -permit_unmatched_virtual_intf')
