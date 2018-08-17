@@ -270,6 +270,12 @@ class Runner(Platform):
                     tcl_args.append('+VSIM_BOOTTYPE_CFG=TB_BOOT_FROM_HYPER_FLASH')
 
 
+              if self.tree.get_child_str('**/chip/name') == 'wolfe':
+                bootsel = 1 if self.tree.get('**/runner/flash_type').get() == 'hyper' else 0
+                tcl_args.append('-gBOOTSEL=%d' % bootsel)
+
+
+
 
             if self.tree.get('**/use_tb_comps').get():
                 tcl_args.append('-gCONFIG_FILE=rtl_config.json -permit_unmatched_virtual_intf')
