@@ -319,8 +319,13 @@ class FlashImage(object):
         self.__dumpToBuff()
 
         if self.raw != None:
+            try:
+                os.makedirs(os.path.dirname(self.raw))
+            except:
+                pass
+
             with open(self.raw, 'wb') as file:
-                file.write(self.buff)
+                file.write(bytes(self.buff))
 
         if self.stimuli != None:
 
@@ -350,9 +355,9 @@ class FlashImage(object):
                         dumpByteToSlm(file, i, self.buff[i])
 
 
-def genFlashImage(slmStim=None, bootBinary=None, comps=[], verbose=False, archi=None, encrypt=False, aesKey=None, aesIv=None, flashType='spi', qpi=True):
+def genFlashImage(slmStim=None, raw_stim=None, bootBinary=None, comps=[], verbose=False, archi=None, encrypt=False, aesKey=None, aesIv=None, flashType='spi', qpi=True):
     if bootBinary != None or len(comps) != 0:
-        if slmStim != None:
+        if slmStim != None or raw_stim is not None:
             compsList = ''
             romBoot = ''
 
@@ -362,7 +367,10 @@ def genFlashImage(slmStim=None, bootBinary=None, comps=[], verbose=False, archi=
             for comp in comps:
                 compsList += ' --comp=%s' % comp
     
-            cmd = "plp_mkflash %s %s --stimuli=%s --flash-type=%s" % (romBoot, compsList, slmStim, flashType)
+            if slmStim is not None:
+                cmd = "plp_mkflash %s %s --stimuli=%s --flash-type=%s" % (romBoot, compsList, slmStim, flashType)
+            else:
+                cmd = "plp_mkflash %s %s --raw=%s --flash-type=%s" % (romBoot, compsList, raw_stim, flashType)
 
             if qpi: cmd+= ' --qpi'
 

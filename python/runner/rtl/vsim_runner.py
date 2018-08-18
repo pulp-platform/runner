@@ -76,7 +76,7 @@ class Runner(Platform):
             comps = []
             fs = self.tree.get('**/fs')
             if fs is not None:
-                comps = fs.get('files').get()
+                comps = self.get_json().get('**/fs/files').get_dict()
 
             if plp_flash_stimuli.genFlashImage(
                 slmStim=self.tree.get('**/runner/flash_slm_file').get(),
