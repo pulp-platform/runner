@@ -26,7 +26,7 @@ import runner.rtl.xcelium_runner
 
 
 def get_runner(chip, tree):
-    if chip in ['vega', 'pulpissimo', 'pulp', 'gap', 'wolfe']:
+    if chip in ['vega', 'pulpissimo', 'pulp', 'gap', 'wolfe', 'vivosoc3']:
         sim = tree.get_child_str('**/runner/simulator')
         if sim in [ None, 'vsim' ]:
             return runner.rtl.vsim_runner.Runner

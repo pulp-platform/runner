@@ -256,6 +256,9 @@ class Runner(Platform):
             if not self.tree.get('**/runner/boot_from_flash').get():
                 tcl_args.append('-gLOAD_L2=JTAG')
 
+            if self.tree.get_child_str('**/chip/name') == 'vivosoc3':
+                tcl_args.append("-gBOOT_ADDR=32'h1C004000")
+
             autorun = self.tree.get('**/debug_bridge/autorun')
             if self.tree.get('**/runner/use_external_tb').get() or \
               autorun is not None and autorun.get():
