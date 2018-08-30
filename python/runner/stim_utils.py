@@ -49,7 +49,7 @@ class stim(object):
     if value is None:
       value = 0
 
-    value &= ((~(width - 1)) << (shift*8))
+    value &= ~(((1<<width) - 1) << (shift*8))
     value |= int.from_bytes(data[0:iter_size], byteorder='little') << (shift*8)
 
     self.mem[str(aligned_base)] = value
