@@ -270,7 +270,7 @@ class Runner(Platform):
               elif self.tree.get('**/runner/flash_type').get() == 'hyper':
                 tcl_args.append('-gHYPER_FLASH_LOAD_MEM=1')
 
-                if self.tree.get_child_str('**/chip/name') == 'gap':
+                if self.tree.get_child_str('**/chip/name') == 'gap' or self.tree.get_child_str('**/chip/name') == 'vega':
                     tcl_args.append('+VSIM_PADMUX_CFG=TB_PADMUX_ALT3_HYPERBUS')
                     tcl_args.append('+VSIM_BOOTTYPE_CFG=TB_BOOT_FROM_HYPER_FLASH')
 
