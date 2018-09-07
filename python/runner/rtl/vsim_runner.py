@@ -72,7 +72,7 @@ class Runner(Platform):
             os.remove('cluster_domain.vcd.gz')
         if os.system('gzip cluster_domain.vcd') != 0:
             return -1
-        if os.system(os.path.join(os.environ.get('POWER_ANALYSIS_PATH'), 'start_power_zh.csh')) != -1:
+        if os.system(os.path.join(os.environ.get('POWER_ANALYSIS_PATH'), 'start_power_zh.csh')) != 0:
             return -1
         return 0
 
