@@ -27,6 +27,7 @@ import subprocess
 import shlex
 import io
 import runner.stim_utils
+from shutil import copyfile
 
 
 # This class is the default runner for all chips but can be overloaded
@@ -68,12 +69,21 @@ class Runner(Platform):
     def power(self):
         os.environ['POWER_VCD_FILE'] = os.path.join(os.getcwd(), 'cluster_domain.vcd.gz')
         os.environ['POWER_ANALYSIS_PATH'] = os.path.join(os.environ.get('PULP_SRC_PATH'), 'gf22fdx', 'power_analysis')
+
         if os.path.exists('cluster_domain.vcd.gz'):
             os.remove('cluster_domain.vcd.gz')
+
         if os.system('gzip cluster_domain.vcd') != 0:
             return -1
+
         if os.system(os.path.join(os.environ.get('POWER_ANALYSIS_PATH'), 'start_power_zh.csh')) != 0:
             return -1
+
+        copyfile('reports_cluster_domain_0.8V/CLUSTER_power_breakdown.csv', 'power_report.csv')
+
+        if os.system('power_report_extract --report=power_report.csv --dump --config=rtl_config.json --output=power_synthesis.txt') != 0:
+            return -1
+
         return 0
 
     def prepare(self):
