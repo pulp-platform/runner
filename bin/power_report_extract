@@ -84,34 +84,24 @@ if platform == 'rtl':
     "decompressor" : [
       'cluster_i/decompressor_PLUGIN_wrap'
     ],
-    "cluster_interconnects" : [ 
-      'cluster_i/cluster_interconnect_wrap_i',
-      'cluster_i/data_master_slice_i',
-      'cluster_i/cluster_bus_wrap_i',
-      'cluster_i/axi2mem_wrap_i',
-      'cluster_i/data_slave_slice_i',
+    "cluster_bus" : [
       'cluster_i/axi_size_UPSIZE_32_64_wrap_i',
-      'cluster_i/tie_0_cell',
-      'cluster_i/tie_1_cell',
-      'cluster_i/tie_1_cell',
-      'cluster_i/tie_1_cell1',
       'cluster_i/axi2per_wrap_i',
-      'cluster_i/per_demux_wrap_i',
       'cluster_i/cluster_bus_wrap_i',
       'cluster_i/per2axi_wrap_i',
-      'cluster_i/debug_interconect_i',
+      'cluster_i/axi2mem_wrap_i',
+    ],
+    "cluster_interconnect" : [
+      'cluster_i/cluster_interconnect_wrap_i',
       'cluster_i/TCDM_BUS_2x1_ARB_i',
-      'cluster_i/ep_dma_pe_irq_i',
-      'cluster_i/RC_CG_DECLONE_HIER_INST'
+      'cluster_i/per_demux_wrap_i',
+      'cluster_i/debug_interconect_i',
     ],
     "hwce" : [
       'cluster_i/hwce_wrap_i'
     ],
     "event_unit" : [
       'cluster_i/u_event_dc'
-    ],
-    "clustercg" : [
-      'cluster_i/u_clustercg'
     ]
   }
 
