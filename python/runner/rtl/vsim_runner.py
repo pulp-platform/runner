@@ -86,7 +86,14 @@ class Runner(Platform):
 
         return 0
 
+    def __check_env(self):
+        if self.get_json().get_child_str('**/loader/boot/mode') == 'rom':
+            self.get_json().get('**/runner').set('boot_from_flash', True)
+
+
     def prepare(self):
+
+        self.__check_env()
 
         if self.tree.get('**/runner/boot_from_flash').get():
 
@@ -145,6 +152,8 @@ class Runner(Platform):
 
 
     def run(self):
+
+        self.__check_env()
 
         if self.get_json().get('**/runner/peripherals') is not None:
             self.get_json().get('**/runner').set('use_tb_comps', True)
@@ -256,6 +265,7 @@ class Runner(Platform):
 
     def __get_sim_cmd(self):
 
+
         simulator = self.tree.get('**/runner/rtl_simulator').get()
 
         if simulator == 'vsim':
@@ -302,6 +312,9 @@ class Runner(Platform):
               if self.tree.get_child_str('**/chip/name') == 'wolfe':
                 bootsel = 1 if self.tree.get('**/runner/flash_type').get() == 'hyper' else 0
                 tcl_args.append('-gBOOTSEL=%d' % bootsel)
+
+              if self.tree.get_child_str('**/chip/name') in [ 'pulp', 'pulpissimo' ]:
+                tcl_args.append('-gLOAD_L2=STANDALONE')
 
 
             if os.environ.get('QUESTA_CXX') != None:
