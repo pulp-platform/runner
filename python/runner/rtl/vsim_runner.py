@@ -275,6 +275,11 @@ class Runner(Platform):
             vsim_args = self.tree.get('**/vsim/args').get_dict()
             gui = self.tree.get('**/vsim/gui').get()
 
+            recordwlf = self.tree.get_child_str('**/vsim/recordwlf')
+            vsimdofile = self.tree.get_child_str('**/vsim/dofile')
+            enablecov = self.tree.get_child_str('**/vsim/enablecov')
+            vopt_args = self.tree.get_child_str('**/vsim/vopt_args')
+
             if gui:
                 vsim_args.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_rtl_path())
                 vsim_args.append("-do 'source %s/tcl_files/%s;'" % (self.__get_rtl_path(), vsim_script))
@@ -338,14 +343,28 @@ class Runner(Platform):
 
                   tcl_args.append('+preload_file=efuse_preload.data') #+debug=1  Add that to get debug messages from efuse
 
+            if gui:
+                self.set_env('VOPT_ACC_ENA', 'YES')
+
+            if recordwlf:
+                self.set_env('RECORD_WLF', 'YES')
+            
+            if vsimdofile:
+                self.set_env('RECORD_WLF', 'YES')
+                tcl_args.append('-do %s/waves/%s' % (self.__get_rtl_path(), vsimdofile))
+
+            if enablecov:
+                tcl_args.append('-coverage -coverstore $VSIM_PATH/fe/sim/cov $vsim_testname_uid') 
+                if vopt_args is None:
+                    vopt_args = list()
+                vopt_args.append('+cover=sbecft+pulp_chip.')
+                # tree.get('**/vsim').set('vopt_args', option)
 
             if len(tcl_args) != 0:
-                #tcl_args_str = 'export VSIM_RUNNER_FLAGS="%s" && ' % ' '.join(tcl_args)
                 self.set_env('VSIM_RUNNER_FLAGS', ' '.join(tcl_args))
-
-            if gui:
-                #tcl_args_str = "export VOPT_ACC_ENA=YES; " + tcl_args_str
-                self.set_env('VOPT_ACC_ENA', 'YES')
+            
+            if len(vopt_args) != 0:
+                self.set_env('VOPT_RUNNER_FLAGS', ' '.join(vopt_args))
 
 
             cmd = "vsim -64 %s" % (' '.join(vsim_args))
