@@ -354,10 +354,11 @@ class Runner(Platform):
                 tcl_args.append('-do %s/waves/%s' % (self.__get_rtl_path(), vsimdofile))
 
             if enablecov:
-                tcl_args.append('-coverage -coverstore $VSIM_PATH/fe/sim/cov $vsim_testname_uid') 
-                if vopt_args is None:
-                    vopt_args = list()
-                vopt_args.append('+cover=sbecft+pulp_chip.')
+                self.set_env('VSIM_COV', 'YES')                
+                # tcl_args.append('-coverage -coverstore $VSIM_PATH/fe/sim/cov') 
+                # if vopt_args is None:
+                #     vopt_args = list()
+                # vopt_args.append('+cover=sbecft+pulp_chip.')
                 # tree.get('**/vsim').set('vopt_args', option)
 
             if len(tcl_args) != 0:
