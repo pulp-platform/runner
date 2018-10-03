@@ -266,14 +266,14 @@ class Runner(Platform):
     def __get_sim_cmd(self):
 
 
-        simulator = self.tree.get('**/runner/rtl_simulator').get()
+        simulator = self.tree.get_child_str('**/runner/rtl_simulator')
 
         if simulator == 'vsim':
 
-            vsim_script = self.tree.get('**/vsim/script').get()
+            vsim_script = self.tree.get_child_str('**/vsim/script')
             tcl_args = self.tree.get('**/vsim/tcl_args').get_dict()
             vsim_args = self.tree.get('**/vsim/args').get_dict()
-            gui = self.tree.get('**/vsim/gui').get()
+            gui = self.tree.get_child_str('**/vsim/gui')
 
             recordwlf = self.tree.get_child_str('**/vsim/recordwlf')
             vsimdofile = self.tree.get_child_str('**/vsim/dofile')
@@ -363,8 +363,9 @@ class Runner(Platform):
             if len(tcl_args) != 0:
                 self.set_env('VSIM_RUNNER_FLAGS', ' '.join(tcl_args))
             
-            if len(vopt_args) != 0:
-                self.set_env('VOPT_RUNNER_FLAGS', ' '.join(vopt_args))
+            if vopt_args is not None:
+                if len(vopt_args) != 0:
+                    self.set_env('VOPT_RUNNER_FLAGS', ' '.join(vopt_args))
 
 
             cmd = "vsim -64 %s" % (' '.join(vsim_args))
