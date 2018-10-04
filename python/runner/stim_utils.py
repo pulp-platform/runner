@@ -169,3 +169,93 @@ class stim(object):
         prev_addr = addr
         file.write(struct.pack('B', int(self.mem.get(key))))
 
+
+
+class Efuse(object):
+
+  def __init__(self, config, verbose=False):
+    self.config = config
+    self.verbose = verbose
+
+    self.dump('Created efuse stimuli generator')
+
+
+  def dump(self, str):
+    if self.verbose:
+      print (str)
+
+  def gen_stim_txt(self, filename):
+
+    efuses = self.config.get('**/efuse/values')
+    if efuses is None:
+      efuses = []
+
+    nb_regs = self.config.get_child_int('**/efuse/nb_regs')
+
+    pulp_chip = self.config.get_child_str('**/chip/name')
+
+    if pulp_chip == 'gap':
+
+      load_mode = self.config.get_child_str('**/loader/boot/mode')
+      aes_key = self.config.get_child_str('**/efuse/aes_key')
+      aes_iv = self.config.get_child_str('**/efuse/aes_iv')
+      xtal_check = self.config.get_child_bool('**/efuse/xtal_check')
+      xtal_check_delta = self.config.get_child_bool('**/efuse/xtal_check_delta')
+      xtal_check_min = self.config.get_child_bool('**/efuse/xtal_check_min')
+      xtal_check_max = self.config.get_child_bool('**/efuse/xtal_check_max')
+
+
+      # In case we boot with the classic rom mode, don't init any efuse, the boot loader will boot with the default mode
+      load_mode_hex = None
+      if load_mode == 'rom':
+        load_mode_hex = 0x3A
+      elif load_mode == 'spi':
+        load_mode_hex = 0x0A
+      elif load_mode == 'jtag':
+        load_mode_hex = 0x12
+      elif load_mode == 'rom_hyper':
+        load_mode_hex = 0x2A
+      elif load_mode == 'rom_spim':
+        load_mode_hex = 0x32
+      elif load_mode == 'rom_spim_qpi':
+        load_mode_hex = 0x3A
+      elif load_mode == 'jtag_dev' or load_mode == 'spi_dev':
+        load_mode_hex = None
+      
+      if xtal_check:
+          if load_mode_hex == None: load_mode_hex = 0
+          load_mode_hex |= 1<<7
+          delta = int(xtal_check_delta*((1 << 15)-1))
+          efuses.append('26:0x%x' % (delta & 0xff))
+          efuses.append('27:0x%x' % ((delta >> 8) & 0xff))
+          efuses.append('28:0x%x' % (xtal_check_min))
+          efuses.append('29:0x%x' % (xtal_check_max))
+
+      if load_mode_hex != None:
+          if aes_key != None: 
+              load_mode_hex |= 0x40
+              for i in range(0, 16):
+                  efuses.append('%d:0x%s' % (2+i, aes_key[30-i*2:32-i*2]))
+              for i in range(0, 8):
+                  efuses.append('%d:0x%s' % (18+i, aes_iv[14-i*2:16-i*2]))
+
+          efuses.append('0:%s' % str(load_mode_hex))
+    
+
+    # Efuse preloading file generation
+    if len(efuses) != 0:
+
+        values = [0] * nb_regs * 8
+        for efuse in efuses:
+            efuseId, value = efuse.split(':')
+            self.dump('  Writing register (index: %d, value: 0x%x)' % (int(efuseId), int(value)))
+            efuseId = int(efuseId, 0)
+            value = int(value, 0)
+            for index in range(0, 8):
+                if (value >> index) & 1 == 1: values[efuseId + index*128] = 1
+
+        self.dump('  Generating to file: ' + filename)
+
+        with open(filename, 'w') as file:
+            for value in values:
+                file.write('%d ' % (value))

@@ -87,13 +87,15 @@ class Runner(Platform):
         return 0
 
     def __check_env(self):
-        if self.get_json().get_child_str('**/loader/boot/mode') == 'rom':
+        if self.get_json().get_child_str('**/loader/boot/mode').find('rom') != -1:
             self.get_json().get('**/runner').set('boot_from_flash', True)
 
 
     def prepare(self):
 
         self.__check_env()
+
+        print (self.tree.get('**/runner/boot_from_flash').get())
 
         if self.tree.get('**/runner/boot_from_flash').get():
 
@@ -104,7 +106,7 @@ class Runner(Platform):
             comps = []
             fs = self.tree.get('**/fs')
             if fs is not None:
-                comps_conf = self.get_json().get('**/fs/files')
+                comps_conf = self.get_json().get('**/flash/fs/files')
                 if comps_conf is not None:
                     comps = comps_conf.get_dict()
 
@@ -126,6 +128,10 @@ class Runner(Platform):
 
             stim.gen_stim_slm_64('vectors/stim.txt')
 
+
+        if self.get_json().get('**/efuse') is not None:
+            efuse = runner.stim_utils.Efuse(self.get_json(), verbose=self.tree.get('**/runner/verbose').get())
+            efuse.gen_stim_txt('efuse_preload.data')
 
         return 0
 
