@@ -112,8 +112,8 @@ class stim(object):
                     addr = segment['p_paddr']
                     size = len(data)
 
+                    load = False
                     if len(self.areas) != 0:
-                      load = False
                       for area in self.areas:
                         if addr >= area[0] and addr + size <= area[1]:
                           load = True
