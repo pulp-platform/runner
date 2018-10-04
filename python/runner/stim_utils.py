@@ -196,7 +196,7 @@ class Efuse(object):
 
     if pulp_chip == 'gap':
 
-      load_mode = self.config.get_child_str('**/loader/boot/mode')
+      load_mode = self.config.get_child_str('**/runner/boot-mode')
       aes_key = self.config.get_child_str('**/efuse/aes_key')
       aes_iv = self.config.get_child_str('**/efuse/aes_iv')
       xtal_check = self.config.get_child_bool('**/efuse/xtal_check')

@@ -20,7 +20,6 @@
 
 from plp_platform import *
 import plp_flash_stimuli
-from efuse import *
 import time
 import sys
 import subprocess
@@ -87,7 +86,7 @@ class Runner(Platform):
         return 0
 
     def __check_env(self):
-        if self.get_json().get_child_str('**/loader/boot/mode').find('rom') != -1:
+        if self.get_json().get_child_str('**/runner/boot-mode').find('rom') != -1:
             self.get_json().get('**/runner').set('boot_from_flash', True)
 
 
@@ -345,9 +344,7 @@ class Runner(Platform):
                 
 
             if self.tree.get('**/efuse') is not None:
-              if efuse_genStimuli_fromOption([], 1024, 'efuse_preload.data', self.tree.get('**/runner/boot-mode').get()) != None:
-
-                  tcl_args.append('+preload_file=efuse_preload.data') #+debug=1  Add that to get debug messages from efuse
+                tcl_args.append('+preload_file=efuse_preload.data') #+debug=1  Add that to get debug messages from efuse
 
             if gui:
                 self.set_env('VOPT_ACC_ENA', 'YES')
