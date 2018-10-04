@@ -86,6 +86,8 @@ class stim(object):
 
   def __gen_stim_slm(self, filename, width):
 
+    self.dump('  Generating to file: ' + filename)
+
     try:
       os.makedirs(os.path.dirname(filename))
     except:
@@ -112,8 +114,9 @@ class stim(object):
                     addr = segment['p_paddr']
                     size = len(data)
 
-                    load = False
+                    load = True
                     if len(self.areas) != 0:
+                      load = False
                       for area in self.areas:
                         if addr >= area[0] and addr + size <= area[1]:
                           load = True

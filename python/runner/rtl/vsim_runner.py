@@ -119,7 +119,7 @@ class Runner(Platform):
 
         else:
 
-            stim = runner.stim_utils.stim()
+            stim = runner.stim_utils.stim(verbose=self.tree.get('**/runner/verbose').get())
 
             for binary in self.get_json().get('**/loader/binaries').get_dict():
                 stim.add_binary(binary)
