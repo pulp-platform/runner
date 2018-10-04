@@ -21,19 +21,32 @@
 from elftools.elf.elffile import ELFFile
 import os
 import os.path
+import struct
 
 
 
 class stim(object):
 
 
-  def __init__(self):
+  def __init__(self, verbose=False):
     self.binaries = []
     self.mem = {}
+    self.verbose = verbose
+    self.areas = []
 
+    self.dump('Created stimuli generator')
+
+  def dump(self, str):
+    if self.verbose:
+      print (str)
 
   def add_binary(self, binary):
+    self.dump('  Added binary: %s' % binary)
     self.binaries.append(binary)
+
+  def add_area(self, start, size):
+    self.dump('  Added target area: [0x%x -> 0x%x]' % (start, start + size))
+    self.areas.append([start, start+size])
 
 
   def __add_mem_word(self, base, size, data, width):
@@ -71,7 +84,7 @@ class stim(object):
       data = data[iter_size:]
 
 
-  def __gen_stim(self, filename, width):
+  def __gen_stim_slm(self, filename, width):
 
     try:
       os.makedirs(os.path.dirname(filename))
@@ -82,8 +95,9 @@ class stim(object):
       for key in sorted(self.mem.keys()):
         file.write('%X_%0*X\n' % (int(key), width*2, self.mem.get(key)))
 
+  def __parse_binaries(self, width):
 
-  def gen_stim_64(self, stim_file):
+    self.mem = {}
 
     for binary in self.binaries:
 
@@ -98,14 +112,57 @@ class stim(object):
                     addr = segment['p_paddr']
                     size = len(data)
 
-                    print ('Loading section (base: 0x%x, size: 0x%x)' % (addr, size))
+                    if len(self.areas) != 0:
+                      load = False
+                      for area in self.areas:
+                        if addr >= area[0] and addr + size <= area[1]:
+                          load = True
+                          break
 
-                    self.__add_mem(addr, size, data, 8)
+                    if load:
 
-                    if segment['p_filesz'] < segment['p_memsz']:
-                        addr = segment['p_paddr'] + segment['p_filesz']
-                        size = segment['p_memsz'] - segment['p_filesz']
-                        print ('Init section to 0 (base: 0x%x, size: 0x%x)' % (addr, size))
-                        self.__add_mem(addr, size, [0] * size, 8)
+                      self.dump('  Handling section (base: 0x%x, size: 0x%x)' % (addr, size))
 
-    self.__gen_stim(stim_file, 8)
+                      self.__add_mem(addr, size, data, width)
+
+                      if segment['p_filesz'] < segment['p_memsz']:
+                          addr = segment['p_paddr'] + segment['p_filesz']
+                          size = segment['p_memsz'] - segment['p_filesz']
+                          self.dump('  Init section to 0 (base: 0x%x, size: 0x%x)' % (addr, size))
+                          self.__add_mem(addr, size, [0] * size, width)
+
+                    else:
+
+                      self.dump('  Bypassing section (base: 0x%x, size: 0x%x)' % (addr, size))
+
+
+
+
+  def gen_stim_slm_64(self, stim_file):
+
+    self.__parse_binaries(8)
+
+    self.__gen_stim_slm(stim_file, 8)
+
+
+  def gen_stim_bin(self, stim_file):
+
+    self.__parse_binaries(1)
+
+    try:
+      os.makedirs(os.path.dirname(stim_file))
+    except:
+      pass
+
+    with open(stim_file, 'wb') as file:
+      prev_addr = None
+      for key in sorted(self.mem.keys()):
+        addr = int(key)
+        if prev_addr is not None:
+          while prev_addr != addr - 1:
+            file.write(struct.pack('B', 0))
+            prev_addr += 1
+
+        prev_addr = addr
+        file.write(struct.pack('B', int(self.mem.get(key))))
+

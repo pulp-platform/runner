@@ -124,7 +124,7 @@ class Runner(Platform):
             for binary in self.get_json().get('**/loader/binaries').get_dict():
                 stim.add_binary(binary)
 
-            stim.gen_stim_64('vectors/stim.txt')
+            stim.gen_stim_slm_64('vectors/stim.txt')
 
 
         return 0
