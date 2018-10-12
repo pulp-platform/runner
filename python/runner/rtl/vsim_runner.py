@@ -232,7 +232,11 @@ class Runner(Platform):
 
         if self.rtl_path is None:
 
-            chip_path_name = 'PULP_RTL_%s' % self.tree.get('**/pulp_chip_family').get().upper()
+            vsim_chip = self.tree.get_child_str('**/runner/vsim_chip')
+            if vsim_chip is None:
+                vsim_chip = self.tree.get('**/pulp_chip_family').get()
+
+            chip_path_name = 'PULP_RTL_%s' % vsim_chip.upper()
             chip_path = os.environ.get(chip_path_name)
             vsim_path = os.environ.get('VSIM_PATH')
 
