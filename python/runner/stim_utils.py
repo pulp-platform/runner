@@ -194,7 +194,9 @@ class Efuse(object):
 
     pulp_chip = self.config.get_child_str('**/chip/name')
 
-    if pulp_chip == 'gap':
+    pulp_chip_family = self.config.get_child_str('**/chip/pulp_chip_family')
+
+    if pulp_chip_family == 'gap':
 
       load_mode = self.config.get_child_str('**/runner/boot-mode')
       aes_key = self.config.get_child_str('**/efuse/aes_key')
