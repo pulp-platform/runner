@@ -209,21 +209,30 @@ class Efuse(object):
 
       # In case we boot with the classic rom mode, don't init any efuse, the boot loader will boot with the default mode
       load_mode_hex = None
-      if load_mode == 'rom':
-        load_mode_hex = 0x3A
-      elif load_mode == 'spi':
-        load_mode_hex = 0x0A
-      elif load_mode == 'jtag':
-        load_mode_hex = 0x12
-      elif load_mode == 'rom_hyper':
-        load_mode_hex = 0x2A
-      elif load_mode == 'rom_spim':
-        load_mode_hex = 0x32
-      elif load_mode == 'rom_spim_qpi':
-        load_mode_hex = 0x3A
-      elif load_mode == 'jtag_dev' or load_mode == 'spi_dev':
-        load_mode_hex = None
-      
+
+      if pulp_chip == 'gap':
+
+        if load_mode == 'rom':
+          load_mode_hex = 0x3A
+        elif load_mode == 'spi':
+          load_mode_hex = 0x0A
+        elif load_mode == 'jtag':
+          load_mode_hex = 0x12
+        elif load_mode == 'rom_hyper':
+          load_mode_hex = 0x2A
+        elif load_mode == 'rom_spim':
+          load_mode_hex = 0x32
+        elif load_mode == 'rom_spim_qpi':
+          load_mode_hex = 0x3A
+        elif load_mode == 'jtag_dev' or load_mode == 'spi_dev':
+          load_mode_hex = None
+
+      else:
+        if load_mode == 'rom':
+          # RTL platform | flash boot | no encryption | no wait xtal
+          load_mode_hex = 2 | (2 << 3) | (0 << 4) | (0 << 5) | (0 << 6) | (0 << 7)
+        
+        
       if xtal_check:
           if load_mode_hex == None: load_mode_hex = 0
           load_mode_hex |= 1<<7
