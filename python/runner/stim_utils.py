@@ -228,10 +228,18 @@ class Efuse(object):
           load_mode_hex = None
 
       else:
+        info3 = 0
         if load_mode == 'rom':
           # RTL platform | flash boot | no encryption | no wait xtal
           load_mode_hex = 2 | (2 << 3) | (0 << 4) | (0 << 5) | (0 << 6) | (0 << 7)
+        elif load_mode == 'rom_hyper':
+          # RTL platform | flash boot | no encryption | no wait xtal
+          load_mode_hex = 2 | (2 << 3) | (0 << 4) | (0 << 5) | (0 << 6) | (0 << 7)
+          # Hyperflash type
+          info3 = (1 << 0)
         
+        if info3 != 0:
+          efuses.append('37:%s' % (info3))
         
       if xtal_check:
           if load_mode_hex == None: load_mode_hex = 0
@@ -250,23 +258,21 @@ class Efuse(object):
               for i in range(0, 8):
                   efuses.append('%d:0x%s' % (18+i, aes_iv[14-i*2:16-i*2]))
 
-          efuses.append('0:%s' % str(load_mode_hex))
+          efuses.append('0:%s' % load_mode_hex)
     
 
     # Efuse preloading file generation
-    if len(efuses) != 0:
+    values = [0] * nb_regs * 8
+    for efuse in efuses:
+        efuseId, value = efuse.split(':')
+        self.dump('  Writing register (index: %d, value: 0x%x)' % (int(efuseId), int(value)))
+        efuseId = int(efuseId, 0)
+        value = int(value, 0)
+        for index in range(0, 8):
+            if (value >> index) & 1 == 1: values[efuseId + index*128] = 1
 
-        values = [0] * nb_regs * 8
-        for efuse in efuses:
-            efuseId, value = efuse.split(':')
-            self.dump('  Writing register (index: %d, value: 0x%x)' % (int(efuseId), int(value)))
-            efuseId = int(efuseId, 0)
-            value = int(value, 0)
-            for index in range(0, 8):
-                if (value >> index) & 1 == 1: values[efuseId + index*128] = 1
+    self.dump('  Generating to file: ' + filename)
 
-        self.dump('  Generating to file: ' + filename)
-
-        with open(filename, 'w') as file:
-            for value in values:
-                file.write('%d ' % (value))
+    with open(filename, 'w') as file:
+        for value in values:
+            file.write('%d ' % (value))
