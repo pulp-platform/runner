@@ -94,8 +94,6 @@ class Runner(Platform):
 
         self.__check_env()
 
-        print (self.tree.get('**/runner/boot_from_flash').get())
-
         if self.tree.get('**/runner/boot_from_flash').get():
 
             # Boot from flash, we need to generate the flash image
