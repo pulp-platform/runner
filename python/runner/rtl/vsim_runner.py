@@ -87,7 +87,10 @@ class Runner(Platform):
 
     def __check_env(self):
         if self.get_json().get_child_str('**/runner/boot-mode').find('rom') != -1:
-            self.get_json().get('**/runner').set('boot_from_flash', True)
+            if self.tree.get_child_str('**/vsim/boot-mode') in ['jtag']:
+                self.get_json().get('**/runner').set('boot_from_flash', False)
+            else:
+                self.get_json().get('**/runner').set('boot_from_flash', True)
 
 
     def prepare(self):
