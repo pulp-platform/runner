@@ -110,13 +110,18 @@ class Runner(Platform):
                 if comps_conf is not None:
                     comps = comps_conf.get_dict()
 
+            encrypted = self.get_json().get_child_str('**/efuse/encrypted')
+            aes_key = self.get_json().get_child_str('**/efuse/aes_key')
+            aes_iv = self.get_json().get_child_str('**/efuse/aes_iv')
+
             if plp_flash_stimuli.genFlashImage(
                 slmStim=self.tree.get('**/runner/flash_slm_file').get(),
                 bootBinary=self.get_json().get('**/loader/binaries').get_elem(0).get(),
                 comps=comps,
                 verbose=self.tree.get('**/runner/verbose').get(),
                 archi=self.tree.get('**/pulp_chip_family').get(),
-                flashType=self.tree.get('**/runner/flash_type').get()):
+                flashType=self.tree.get('**/runner/flash_type').get(),
+                encrypt=encrypted, aesKey=aes_key, aesIv=aes_iv):
                 return -1
 
         else:
@@ -195,7 +200,11 @@ class Runner(Platform):
             if port is None:
                 return -1
 
-            bridge_cmd = 'plpbridge --config=rtl_config.json --verbose=10 --port=%s' % port
+            options = self.tree.get_child_str('**/debug_bridge/options')
+            if options is None:
+                options  = ''
+
+            bridge_cmd = 'plpbridge --config=rtl_config.json --verbose=10 --port=%s %s' % (port, options)
             print ('Launching bridge with command:')
             print (bridge_cmd)
             time.sleep(10)

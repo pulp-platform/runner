@@ -199,6 +199,7 @@ class Efuse(object):
     if pulp_chip_family == 'gap':
 
       load_mode = self.config.get_child_str('**/runner/boot-mode')
+      encrypted = self.config.get_child_str('**/efuse/encrypted')
       aes_key = self.config.get_child_str('**/efuse/aes_key')
       aes_iv = self.config.get_child_str('**/efuse/aes_iv')
       xtal_check = self.config.get_child_bool('**/efuse/xtal_check')
@@ -251,7 +252,7 @@ class Efuse(object):
           efuses.append('29:0x%x' % (xtal_check_max))
 
       if load_mode_hex != None:
-          if aes_key != None: 
+          if encrypted: 
               load_mode_hex |= 0x40
               for i in range(0, 16):
                   efuses.append('%d:0x%s' % (2+i, aes_key[30-i*2:32-i*2]))
@@ -265,7 +266,7 @@ class Efuse(object):
     values = [0] * nb_regs * 8
     for efuse in efuses:
         efuseId, value = efuse.split(':')
-        self.dump('  Writing register (index: %d, value: 0x%x)' % (int(efuseId), int(value)))
+        self.dump('  Writing register (index: %d, value: 0x%x)' % (int(efuseId, 0), int(value, 0)))
         efuseId = int(efuseId, 0)
         value = int(value, 0)
         for index in range(0, 8):
