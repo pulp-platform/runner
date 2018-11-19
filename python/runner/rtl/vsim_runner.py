@@ -386,7 +386,11 @@ class Runner(Platform):
                     self.set_env('VOPT_RUNNER_FLAGS', ' '.join(vopt_args))
 
 
-            cmd = "vsim -64 %s" % (' '.join(vsim_args))
+            vsim_cmd = os.environ.get('VSIM_COMMAND')
+            if vsim_cmd is None:
+                vsim_cmd = "vsim -64"
+
+            cmd = "%s %s" % (vsim_cmd, ' '.join(vsim_args))
 
 
             return cmd
