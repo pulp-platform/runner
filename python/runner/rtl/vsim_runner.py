@@ -337,7 +337,7 @@ class Runner(Platform):
                 bootsel = 1 if self.tree.get('**/runner/flash_type').get() == 'hyper' else 0
                 tcl_args.append('-gBOOTSEL=%d' % bootsel)
 
-              if self.tree.get_child_str('**/chip/name') in [ 'pulp', 'pulpissimo' ]:
+              if self.tree.get_child_str('**/chip/name') in [ 'pulp', 'pulpissimo', 'arnold' ]:
                 tcl_args.append('-gLOAD_L2=STANDALONE')
 
 
