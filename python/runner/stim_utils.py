@@ -228,8 +228,28 @@ class Efuse(object):
         elif load_mode == 'jtag_dev' or load_mode == 'spi_dev':
           load_mode_hex = None
 
+        if xtal_check:
+            if load_mode_hex == None: load_mode_hex = 0
+            load_mode_hex |= 1<<7
+            delta = int(xtal_check_delta*((1 << 15)-1))
+            efuses.append('26:0x%x' % (delta & 0xff))
+            efuses.append('27:0x%x' % ((delta >> 8) & 0xff))
+            efuses.append('28:0x%x' % (xtal_check_min))
+            efuses.append('29:0x%x' % (xtal_check_max))
+
+        if load_mode_hex != None:
+            if encrypted: 
+                load_mode_hex |= 0x40
+                for i in range(0, 16):
+                    efuses.append('%d:0x%s' % (2+i, aes_key[30-i*2:32-i*2]))
+                for i in range(0, 8):
+                    efuses.append('%d:0x%s' % (18+i, aes_iv[14-i*2:16-i*2]))
+
+            efuses.append('0:%s' % load_mode_hex)
+    
       else:
         info3 = 0
+        info6 = 0
         if load_mode == 'rom':
           # RTL platform | flash boot | no encryption | no wait xtal
           load_mode_hex = 2 | (2 << 3) | (0 << 4) | (0 << 5) | (0 << 6) | (0 << 7)
@@ -239,28 +259,32 @@ class Efuse(object):
           # Hyperflash type
           info3 = (1 << 0)
         
+        if xtal_check:
+            if load_mode_hex == None: load_mode_hex = 0
+            load_mode_hex |= 1<<7
+            delta = int(xtal_check_delta*((1 << 15)-1))
+            efuses.append('26:0x%x' % (delta & 0xff))
+            efuses.append('27:0x%x' % ((delta >> 8) & 0xff))
+            efuses.append('28:0x%x' % (xtal_check_min))
+            efuses.append('29:0x%x' % (xtal_check_max))
+
+        if load_mode_hex != None:
+            if encrypted: 
+                load_mode_hex |= 0x40
+                info6 |= 1<<5
+                for i in range(0, 16):
+                    efuses.append('%d:0x%s' % (2+i, aes_key[30-i*2:32-i*2]))
+                for i in range(0, 8):
+                    efuses.append('%d:0x%s' % (18+i, aes_iv[14-i*2:16-i*2]))
+
+            efuses.append('0:%s' % load_mode_hex)
+    
         if info3 != 0:
           efuses.append('37:%s' % (info3))
         
-      if xtal_check:
-          if load_mode_hex == None: load_mode_hex = 0
-          load_mode_hex |= 1<<7
-          delta = int(xtal_check_delta*((1 << 15)-1))
-          efuses.append('26:0x%x' % (delta & 0xff))
-          efuses.append('27:0x%x' % ((delta >> 8) & 0xff))
-          efuses.append('28:0x%x' % (xtal_check_min))
-          efuses.append('29:0x%x' % (xtal_check_max))
-
-      if load_mode_hex != None:
-          if encrypted: 
-              load_mode_hex |= 0x40
-              for i in range(0, 16):
-                  efuses.append('%d:0x%s' % (2+i, aes_key[30-i*2:32-i*2]))
-              for i in range(0, 8):
-                  efuses.append('%d:0x%s' % (18+i, aes_iv[14-i*2:16-i*2]))
-
-          efuses.append('0:%s' % load_mode_hex)
-    
+        if info6 != 0:
+          efuses.append('40:%s' % (info6))
+        
 
     # Efuse preloading file generation
     values = [0] * nb_regs * 8
