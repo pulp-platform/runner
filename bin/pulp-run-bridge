@@ -34,6 +34,8 @@ parser.add_argument("--dir", dest="dir", default=os.getcwd(),
                  help="specify the test directory containing the binaries and from which the execution must be launched.", metavar="PATH")
 
 parser.add_argument("--config-file", dest="configFile", default=None, help='specify the system configuration file')
+parser.add_argument("--options", dest="options", default=None, help="Bridge options")
+parser.add_argument("--wait-pulp-run", dest="wait_pulp_run", action="store_true", help="Wait for pulp-run termination instead of termination")
 
 
 args = parser.parse_args()
@@ -52,10 +54,15 @@ if port is None:
     exit(-1)
 
 bridge_cmd = 'plpbridge --config=plt_config.json --verbose=10 --port=%s' % port
+if args.options is not None:
+  bridge_cmd += ' ' + args.options
 print ('Launching bridge with command:')
 print (bridge_cmd)
 time.sleep(2)
 bridge = subprocess.Popen(shlex.split(bridge_cmd), cwd=args.dir)
 
 retval = bridge.wait()
-prun.terminate()
+if args.wait_pulp_run:
+  prun.wait()
+else:
+  prun.terminate()
