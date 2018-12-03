@@ -271,7 +271,7 @@ class Efuse(object):
         if load_mode_hex != None:
             if encrypted: 
                 load_mode_hex |= 0x40
-                info6 |= 1<<5
+                info6 |= 1<<4
                 for i in range(0, 16):
                     efuses.append('%d:0x%s' % (2+i, aes_key[30-i*2:32-i*2]))
                 for i in range(0, 8):

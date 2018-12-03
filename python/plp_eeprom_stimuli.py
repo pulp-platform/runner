@@ -153,7 +153,9 @@ class Image(object):
             callbacks[callback.callback] = callback
 
         header_buff = bytes([])
-        callbacks_offset = 4 * 4 * 32
+
+        # Reserve one more entry to store CRC
+        callbacks_offset = 4 * 4 * 33
 
         for callback in callbacks:
             i2c_addr = 0
@@ -162,10 +164,11 @@ class Image(object):
             entry = 0
 
             if callback is not None:
+                callbacks_offset = (callbacks_offset + 127) & ~0x7f
                 callback.i2c_addr = callbacks_offset
                 i2c_addr = callback.i2c_addr
                 l2_addr = callback.segments[0].base
-                i2c_size = callback.segments[0].size
+                i2c_size = callback.segments[0].size + 4
                 entry = callback.entry
 
                 callbacks_offset += callback.segments[0].size
