@@ -175,6 +175,8 @@ class Runner(Platform):
         with open('rtl_config.json', 'w') as file:
             file.write(self.get_json().dump_to_string())
 
+        if not os.path.exists('stdout'):
+            os.makedirs('stdout')
 
 
         cmd = self.__get_sim_cmd()
