@@ -362,6 +362,10 @@ class Runner(Platform):
             if self.tree.get('**/efuse') is not None:
                 tcl_args.append('+preload_file=efuse_preload.data') #+debug=1  Add that to get debug messages from efuse
 
+            baudrate = self.tree.get_child_int('**/uart/baudrate')
+            if baudrate is not None:
+                tcl_args.append('-gBAUDRATE=%d' % baudrate)
+
             if gui:
                 self.set_env('VOPT_ACC_ENA', 'YES')
 
