@@ -36,7 +36,6 @@
 
 from plp_platform import *
 import plp_flash_stimuli
-from efuse import *
 import time
 import sys
 import subprocess
