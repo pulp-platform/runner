@@ -21,5 +21,4 @@ sdk.build: $(INSTALL_HEADERS)
 	install -d $(WORKSTATION_PKG)/bin
 	install -d $(WORKSTATION_PKG)/ref
 	install -D bin/* $(WORKSTATION_PKG)/bin
-	install -D ref/* $(WORKSTATION_PKG)/ref
 	-gcc -O3 -o $(WORKSTATION_PKG)/bin/aes_encode aes/AesLib.c aes/main.c

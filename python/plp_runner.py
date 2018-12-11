@@ -26,7 +26,6 @@ import os
 import sys
 import re
 import imp
-import plptree
 import json_tools as js
 
 class Property(object):
@@ -152,11 +151,11 @@ class Runner(object):
         self.config.addOption("--no-warnings", dest="warnings", action="store_false", default=True,
                          help='deactivate warnings')
 
-        self.config.addOption("--config", dest="config", default=None, help='specify the system configuration')
+        self.config.addOption("--config", dest="config_name", default=None, help='specify the system configuration name')
 
         self.config.addOption("--reentrant", dest="reentrant", action="store_true", help='This script was called was pulp-run')
 
-        self.config.addOption("--config-file", dest="configFile", default=None, help='specify the system configuration file')
+        self.config.addOption("--config-file", dest="config_file", default=None, help='specify the system configuration file')
 
         self.config.addOption("--config-opt", dest="configOpt", default=[], action="append", help='specify configuration option')
 
@@ -178,29 +177,35 @@ class Runner(object):
             pass
         os.chdir(testPath)
 
-        systemConfig = self.config.getOption('config')
-        if systemConfig != None:
-            self.system_tree = plptree.get_configs_from_env(self.config.args.configDef, systemConfig)
-        else:
-            self.system_tree = plptree.get_configs_from_file(self.config.getOption('configFile'))[0]
-
-        self.pyStack = self.system_tree.get_bool('runner/py-stack')
 
 
+        config_path = self.config.getOption('config_file')
+        config_name = self.config.getOption('config_name')
 
-        # First get the json configuration
-        config_path = self.config.getOption('configFile')
-        chip = self.config.getOption('chip')
+        if config_path is not None:
+            if not os.path.exists(config_path):
+                raise Exception("ERROR, specified configuration does not exist (config: %s)" % (config_path))
 
-        if chip is not None:
+        elif config_name is not None:
             config_path = os.path.join(
                 os.path.dirname(os.path.dirname(sys.argv[0])),
-                'configs', 'systems', '%s.json' % chip
+                'configs', 'systems', '%s.json' % config_name
             )
-        elif config_path is None:
-            raise Exception('A chip or a config file must be specified')
+
+            if not os.path.exists(config_path):
+                raise Exception ("ERROR, didn't find any configuration for specified chip (chip: %s, config: %s)" % (config_name, config_path))
+
+        else:
+            raise Exception('A config name or a config file must be specified')
+
+
 
         config = js.import_config_from_file(config_path)
+
+
+
+
+        self.pyStack = config.get_child_bool('**/runner/py-stack')
 
 
         platform = self.config.getOption('platform')
@@ -208,12 +213,7 @@ class Runner(object):
             config.set('platform', platform)
 
 
-        self.system_tree = plptree.get_config_tree_from_dict(config.get_dict())
-
         platform_name = config.get('**/platform').get()
-
-        if platform_name == 'gvsoc' and self.system_tree.get('pulp_chip') not in []:
-            platform_name = 'vp'
 
         try:
 
@@ -224,11 +224,12 @@ class Runner(object):
             platform = module.Runner(self.config, config)
 
             for module in self.modules:
-                platform.addParser(module(self.config, self.system_tree))
+                platform.addParser(module(self.config, config))
 
             retval = platform.handleCommands()
             return retval
         except Exception as e:
+            raise
             if self.pyStack:
                 raise
             else:

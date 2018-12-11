@@ -5,7 +5,6 @@ from plp_platform import *
 import os
 import os.path
 import time
-import binary_tools as binaryTools
 import plptree
 
 def execCmd(cmd):
@@ -14,9 +13,9 @@ def execCmd(cmd):
 
 class Runner(Platform):
 
-    def __init__(self, config, tree):
+    def __init__(self, config, js_config):
 
-        super(Runner, self).__init__(config, tree)
+        super(Runner, self).__init__(config, js_config)
         
         parser = config.getParser()
 
@@ -44,19 +43,12 @@ class Runner(Platform):
         self.addCommand('copy', 'Copy binary')
 
 
-        self.system_tree = plptree.get_configs_from_file(self.config.getOption('configFile'))[0]
-
     def reset(self):
         return 0
-        return execCmd("vivo-boot --reset")
 
 
     def copy(self):
-        binary = self.config.getOption('binary').split(':')[0]
-        binaries = binaryTools.getSectionBinaries(binary, os.path.dirname(binary), self.config.getOption('pulpCoreArchi'))
-        if len(binaries) == 2:
-            return execCmd("vivo-boot --binary=%s:0x1c000000 --binary=%s:0x10000000" % (binaries[0], binaries[1]))
-        else: return -1
+        return 0
 
     def header(self):
         binary = self.config.getOption('binary').split(':')[0]
@@ -65,12 +57,7 @@ class Runner(Platform):
         return 0
 
     def prepare(self):
-        if self.config.getOption('pulpArchi') == 'mia' or self.config.getOption('pulpArchi') == 'fulmine': return 0
-        
-        binary = self.config.getOption('binary').split(':')[0]
-        if binary != None:
-            return binaryTools.genSectionBinaries(binary, os.path.dirname(binary), self.config.getOption('pulpCoreArchi'))
-        else: return -1
+        return 0
 
     def run(self):
 
@@ -89,21 +76,21 @@ class Runner(Platform):
             flashOpt = ''
 
 
-        if self.system_tree.get('pulp_chip') not in ['honey', 'mia']:
+        if self.get_json().get_child_str('**/chip/name') not in ['honey', 'mia']:
 
             if self.get_json().get('**/gdb/active').get_bool():
-                commands_name = 'debug_bridge/gdb_commands'
+                commands_name = '**/debug_bridge/gdb_commands'
             else:
-                commands_name = 'debug_bridge/commands'
+                commands_name = '**/debug_bridge/commands'
 
-            commands = " ".join(self.system_tree.get(commands_name).split(','))
+            commands = " ".join(self.get_json().get_child_str(commands_name).split(','))
 
 
-            if self.system_tree.get('pulp_chip') in ['gap']:
+            if self.get_json().get_child_str('**/chip/name') in ['gap']:
                 return execCmd('plpbridge --cable=ftdi@digilent --boot-mode=jtag --binary=%s --chip=gap %s' % (binary, commands))
-            elif self.system_tree.get('pulp_chip') in ['wolfe']:
+            elif self.get_json().get_child_str('**/chip/name') in ['wolfe']:
                 return execCmd('plpbridge --cable=ftdi --boot-mode=jtag --binary=%s --chip=wolfe %s' % (binary, commands))
-            elif self.system_tree.get('pulp_chip') in ['vivosoc3']:
+            elif self.get_json().get_child_str('**/chip/name') in ['vivosoc3']:
                 return execCmd('plpbridge --cable=ftdi --binary=%s --chip=vivosoc3 %s' % (binary, commands))
             else:
                 return execCmd('plpbridge --binary=%s --config=%s %s' % (binary, self.config.getOption('configFile'), commands))
