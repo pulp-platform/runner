@@ -186,9 +186,12 @@ class Efuse(object):
 
   def gen_stim_txt(self, filename):
 
+
     efuses = self.config.get('**/efuse/values')
     if efuses is None:
       efuses = []
+    else:
+      efuses = efuses.get_dict()
 
     nb_regs = self.config.get_child_int('**/efuse/nb_regs')
 

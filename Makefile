@@ -1,6 +1,6 @@
 WORKSTATION_PKG ?= $(PULP_SDK_WS_INSTALL)
 
-HEADER_FILES += $(shell find python -name *.py)
+HEADER_FILES += $(shell find python -name "*.py")
 
 
 define declareInstallFile
