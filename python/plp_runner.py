@@ -200,7 +200,7 @@ class Runner(object):
 
 
 
-        config = js.import_config_from_file(config_path)
+        config = js.import_config_from_file(config_path, interpret=True)
 
 
 

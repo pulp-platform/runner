@@ -1,4 +1,4 @@
-WORKSTATION_PKG ?= $(PULP_SDK_WS_INSTALL)
+WORKSTATION_PKG ?= $(INSTALL_DIR)
 
 HEADER_FILES += $(shell find python -name "*.py")
 
