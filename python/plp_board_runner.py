@@ -6,6 +6,7 @@ import os
 import os.path
 import time
 import plptree
+import plp_flash_stimuli
 
 def execCmd(cmd):
     print ('Executing command: ' + cmd)
@@ -56,7 +57,42 @@ class Runner(Platform):
         if execCmd("s19toheader.py %s.s19 " % (os.path.basename(binary))) != 0: return -1
         return 0
 
+    def get_flash_preload_file(self):
+        return os.path.join(os.getcwd(), 'stimuli/flash.bin')
+
     def prepare(self):
+        comps = []
+        comps_conf = self.get_json().get('**/fs/files')
+        if comps_conf is not None:
+            comps = comps_conf.get_dict()
+
+        if len(comps) != 0 is not None or (self.get_json().get_child_bool('**/runner/boot_from_flash') and self.get_json().get_child_str('**/runner/boot-mode') == 'dev_hyper'):
+
+            encrypted = self.get_json().get_child_str('**/efuse/encrypted')
+            aes_key = self.get_json().get_child_str('**/efuse/aes_key')
+            aes_iv = self.get_json().get_child_str('**/efuse/aes_iv')
+
+            if plp_flash_stimuli.genFlashImage(
+                raw_stim=self.get_flash_preload_file(),
+                bootBinary=self.get_json().get('**/loader/binaries').get_elem(0).get(),
+                comps=comps,
+                verbose=self.get_json().get('**/runner/verbose').get(),
+                archi=self.get_json().get('**/pulp_chip_family').get(),
+                flashType=self.get_json().get('**/runner/flash_type').get(),
+                encrypt=encrypted, aesKey=aes_key, aesIv=aes_iv):
+                return -1
+
+            if self.flash():
+                return -1
+
+        return 0
+
+    def flash(self):
+        if execCmd('plpbridge --cable=ftdi@digilent --chip=gap flash_erase_chip --flasher-init'):
+            return -1
+        if execCmd('plpbridge --cable=ftdi@digilent --chip=gap flash_write --addr=0 --file=%s --flasher-init' % (self.get_flash_preload_file())):
+            return -1
+
         return 0
 
     def run(self):
@@ -87,13 +123,16 @@ class Runner(Platform):
 
 
             if self.get_json().get_child_str('**/chip/name') in ['gap']:
-                return execCmd('plpbridge --cable=ftdi@digilent --boot-mode=jtag --binary=%s --chip=gap %s' % (binary, commands))
+                if self.get_json().get_child_str('**/runner/boot-mode') == 'dev_hyper':
+                    return execCmd('plpbridge --cable=ftdi@digilent --boot-mode=jtag_hyper --chip=gap load')
+                else:
+                    return execCmd('plpbridge --cable=ftdi@digilent --boot-mode=jtag --binary=%s --chip=gap %s' % (binary, commands))
             elif self.get_json().get_child_str('**/chip/name') in ['wolfe']:
                 return execCmd('plpbridge --cable=ftdi --boot-mode=jtag --binary=%s --chip=wolfe %s' % (binary, commands))
             elif self.get_json().get_child_str('**/chip/name') in ['vivosoc3']:
                 return execCmd('plpbridge --cable=ftdi --binary=%s --chip=vivosoc3 %s' % (binary, commands))
             else:
-                return execCmd('plpbridge --binary=%s --config=%s %s' % (binary, self.config.getOption('configFile'), commands))
+                return execCmd('plpbridge --binary=%s --config=%s %s' % (binary, self.config.getOption('config_file'), commands))
 
         elif self.config.getOption('pulpArchi') == 'pulp3':
             return execCmd("debug_bridge -c ft2232 -b %s --binary %s --load --late-reset --loop --printf --start %s %s" % (self.config.getOption('pulpArchi').replace('-riscv', ''), binary, mask, flashOpt))
