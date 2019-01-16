@@ -41,9 +41,6 @@ class Runner(Platform):
         
         parser = config.getParser()
 
-        parser.add_argument("--binary", dest="binary",
-                            help='specify the binary to be loaded')
-                        
         parser.add_argument("--boot-from-flash", dest="boot_from_flash",
                             action="store_true", help='boot from flash')
                         
@@ -116,7 +113,7 @@ class Runner(Platform):
 
             if plp_flash_stimuli.genFlashImage(
                 slmStim=self.get_json().get('**/runner/flash_slm_file').get(),
-                bootBinary=self.get_json().get('**/loader/binaries').get_elem(0).get(),
+                bootBinary=self.get_json().get('**/runner/binaries').get_elem(0).get(),
                 comps=comps,
                 verbose=self.get_json().get('**/runner/verbose').get(),
                 archi=self.get_json().get('**/pulp_chip_family').get(),
@@ -128,7 +125,7 @@ class Runner(Platform):
 
             stim = runner.stim_utils.stim(verbose=self.get_json().get('**/runner/verbose').get())
 
-            for binary in self.get_json().get('**/loader/binaries').get_dict():
+            for binary in self.get_json().get('**/runner/binaries').get_dict():
                 stim.add_binary(binary)
 
             stim.gen_stim_slm_64('vectors/stim.txt')

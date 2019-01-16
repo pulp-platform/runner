@@ -27,6 +27,7 @@ import sys
 import re
 import imp
 import json_tools as js
+import pulp_config as plpconf
 
 class Property(object):
     def __init__(self, path, className, compName, propertyName, value):
@@ -131,8 +132,14 @@ class Runner(object):
         self.config.addOption("--prop", dest="props", action="append",
                          help="specify a property to be given to the platform", metavar="PATH")
         
+        self.config.addOption("--binary", dest="binary", default=[], action="append",
+                            help='specify the binary to be loaded')
+
         self.config.addOption("--dir", dest="dir", default=os.getcwd(),
                          help="specify the test directory containing the binaries and from which the execution must be launched.", metavar="PATH")
+        
+        self.config.addOption("--src-dir", dest="src_dir", default=os.getcwd(),
+                         help="specify the test source directory", metavar="PATH")
         
         self.config.addOption("--launcher", dest="launcher", default=os.path.join(os.environ['PULP_SDK_HOME'], 'bin', 'launcher'),
                          help="specify the launcher command to be executed", metavar="CMD")
@@ -156,6 +163,8 @@ class Runner(object):
         self.config.addOption("--reentrant", dest="reentrant", action="store_true", help='This script was called was pulp-run')
 
         self.config.addOption("--config-file", dest="config_file", default=None, help='specify the system configuration file')
+
+        self.config.addOption("--config-user", dest="config_user", default=[], action="append", help='specify the user configuration file')
 
         self.config.addOption("--config-opt", dest="configOpt", default=[], action="append", help='specify configuration option')
 
@@ -182,28 +191,9 @@ class Runner(object):
         config_path = self.config.getOption('config_file')
         config_name = self.config.getOption('config_name')
 
-        if config_path is not None:
-            if not os.path.exists(config_path):
-                raise Exception("ERROR, specified configuration does not exist (config: %s)" % (config_path))
-
-        elif config_name is not None:
-            config_path = os.path.join(
-                os.path.dirname(os.path.dirname(sys.argv[0])),
-                'configs', 'systems', '%s.json' % config_name
-            )
-
-            if not os.path.exists(config_path):
-                raise Exception ("ERROR, didn't find any configuration for specified chip (chip: %s, config: %s)" % (config_name, config_path))
-
-        else:
-            raise Exception('A config name or a config file must be specified')
 
 
-
-        config = js.import_config_from_file(config_path, interpret=True)
-
-
-
+        config = plpconf.get_config(config_path, ini_configs=self.config.getOption('config_user'), ini_configs_dict={'srcdir': self.config.getOption('src_dir')}, config_opts=self.config.getOption('configOpt'), interpret=True)
 
         self.pyStack = config.get_child_bool('**/runner/py-stack')
 
@@ -211,6 +201,10 @@ class Runner(object):
         platform = self.config.getOption('platform')
         if platform is not None:
             config.set('platform', platform)
+
+        if self.config.getOption('binary') is not None:
+            for binary in self.config.getOption('binary'):
+                config.get('**/runner').set('binaries', binary)
 
 
         platform_name = config.get('**/platform').get()

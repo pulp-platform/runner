@@ -20,9 +20,6 @@ class Runner(Platform):
         
         parser = config.getParser()
 
-        parser.add_argument("--binary", dest="binary",
-                            help='specify the binary to be loaded')
-                        
         parser.add_argument("--pulp-core-archi", dest="pulpCoreArchi",
                             help='specify the core architecture to be simulated', default="or1k")
         parser.add_argument("--pulp-archi", dest="pulpArchi",
@@ -74,7 +71,7 @@ class Runner(Platform):
 
             if plp_flash_stimuli.genFlashImage(
                 raw_stim=self.get_flash_preload_file(),
-                bootBinary=self.get_json().get('**/loader/binaries').get_elem(0).get(),
+                bootBinary=self.get_json().get('**/runner/binaries').get_elem(0).get(),
                 comps=comps,
                 verbose=self.get_json().get('**/runner/verbose').get(),
                 archi=self.get_json().get('**/pulp_chip_family').get(),
