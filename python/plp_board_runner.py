@@ -94,12 +94,12 @@ class Runner(Platform):
 
     def run(self):
 
-        binary = self.config.getOption('binary')
+        binary = self.config.getOption('binary')[0]
         if binary is None:
             raise Exception("No binary specified")
 
         if binary.find(':') != -1:
-            binary, mask = self.config.getOption('binary').split(':')
+            binary, mask = binary.split(':')
         else:
             mask = "1"
 
@@ -107,7 +107,6 @@ class Runner(Platform):
             flashOpt = '-f %s' % (os.path.join(os.environ.get('PULP_SDK_HOME'), 'install/%s/bin/flash_programmer' % (self.config.getOption('pulpCoreArchi'))))
         else:
             flashOpt = ''
-
 
         if self.get_json().get_child_str('**/chip/name') not in ['honey', 'mia']:
 
