@@ -129,9 +129,6 @@ class Runner(object):
 
         self.config.addOption("--platform", dest="platform", default=None, choices=list(self.platforms.keys()), help="specify the platform. Default: %(default)s.")
     
-        self.config.addOption("--prop", dest="props", action="append",
-                         help="specify a property to be given to the platform", metavar="PATH")
-        
         self.config.addOption("--binary", dest="binary", default=[], action="append",
                             help='specify the binary to be loaded')
 
@@ -166,17 +163,13 @@ class Runner(object):
 
         self.config.addOption("--config-user", dest="config_user", default=[], action="append", help='specify the user configuration file')
 
-        self.config.addOption("--config-opt", dest="configOpt", default=[], action="append", help='specify configuration option')
+        self.config.addOption("--config-opt", dest="configOpt", default=[], action="append", help='specify configuration option (DEPRECATED)')
+
+        self.config.addOption("--property", dest="properties", default=[], action="append", help='specify configuration property')
 
         if self.config.getOption('dev'):
             self.config.addOption("--py-stack", dest="pyStack", action="store_true", default=False,
                             help="activate Python tracestack")
-
-        props = self.config.getOption('props')
-        if props != None:
-            for rawProp in props:
-                prop = rawProp.split(':')
-                self.config.setProperty(propertyName=prop[1], value=prop[2], path=prop[0])
 
 
         testPath = os.path.abspath(self.config.getOption('dir'))
@@ -191,9 +184,18 @@ class Runner(object):
         config_path = self.config.getOption('config_file')
         config_name = self.config.getOption('config_name')
 
+        if config_path is None:
+
+            if config_name is None:
+                raise Exception('A config name or a config file must be specified')
+
+            config_path = os.path.join(
+                os.path.dirname(os.path.dirname(sys.argv[0])),
+                'configs', 'chips', config_name, '%s.json' % config_name
+            )
 
 
-        config = plpconf.get_config(config_path, ini_configs=self.config.getOption('config_user'), ini_configs_dict={'srcdir': self.config.getOption('src_dir')}, config_opts=self.config.getOption('configOpt'), interpret=True)
+        config = plpconf.get_config(config_path, ini_configs=self.config.getOption('config_user'), ini_configs_dict={'srcdir': self.config.getOption('src_dir')}, config_opts=self.config.getOption('configOpt'), properties=self.config.getOption('properties'), interpret=True)
 
         self.pyStack = config.get_child_bool('**/runner/py-stack')
 
