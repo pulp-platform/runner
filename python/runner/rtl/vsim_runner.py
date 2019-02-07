@@ -299,14 +299,6 @@ class Runner(Platform):
             enablecov = self.tree.get_child_str('**/vsim/enablecov')
             vopt_args = self.tree.get_child_str('**/vsim/vopt_args')
 
-            if gui:
-                vsim_args.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_rtl_path())
-                vsim_args.append("-do 'source %s/tcl_files/%s;'" % (self.__get_rtl_path(), vsim_script))
-            else:
-                vsim_args.append("-c")
-                vsim_args.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_rtl_path())
-                vsim_args.append("-do 'source %s/tcl_files/%s; run_and_exit;'" % (self.__get_rtl_path(), vsim_script))
-
 
             if not self.tree.get('**/runner/boot_from_flash').get():
                 tcl_args.append('-gLOAD_L2=JTAG')
@@ -385,6 +377,13 @@ class Runner(Platform):
                 if len(vopt_args) != 0:
                     self.set_env('VOPT_RUNNER_FLAGS', ' '.join(vopt_args))
 
+            if gui:
+                vsim_args.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_rtl_path())
+                vsim_args.append("-do 'source %s/tcl_files/%s;'" % (self.__get_rtl_path(), vsim_script))
+            else:
+                vsim_args.append("-c")
+                vsim_args.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_rtl_path())
+                vsim_args.append("-do 'source %s/tcl_files/%s; run_and_exit;'" % (self.__get_rtl_path(), vsim_script))
 
             cmd = "vsim -64 %s" % (' '.join(vsim_args))
 
