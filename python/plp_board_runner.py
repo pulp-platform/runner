@@ -49,7 +49,7 @@ class Runner(Platform):
         return 0
 
     def header(self):
-        binary = self.config.getOption('binary').split(':')[0]
+        binary = self.get_json().get('**/runner/binaries').get_dict()[0]
         if execCmd("objcopy --srec-len 1 --output-target=srec %s %s.s19" % (binary, os.path.basename(binary))) != 0: return -1
         if execCmd("s19toheader.py %s.s19 " % (os.path.basename(binary))) != 0: return -1
         return 0
