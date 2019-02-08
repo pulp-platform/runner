@@ -37,9 +37,14 @@ import sys
 import subprocess
 import shlex
 import io
+import platform
 import runner.stim_utils
 from shutil import copyfile
 
+
+GWT_NETWORK="greenwaves-technologies.com"
+ETH_NETWORK="ee.ethz.ch"
+UNIBO_NETWORK="eees.dei.unibo.it"
 
 # This class is the default runner for all chips but can be overloaded
 # for specific chips in order to change a bit the behavior.
@@ -372,8 +377,15 @@ class Runner(Platform):
                 xmelab_args.append('-access +rwc +fsmdebug \
                                     -createdebugdb')
 
-            xmelab_cmd = "xmelab tb_lib.tb %s" % (' '.join(xmelab_args))
-            xmsim_cmd = "xmsim tb %s" % (' '.join(xmsim_args))
+            if platform.node()[-len(ETH_NETWORK):] == ETH_NETWORK or platform.node()[-len(UNIBO_NETWORK):] == UNIBO_NETWORK:
+                cds_xmelab = 'cds_ius-18.09.005 xmelab'
+                cds_xmsim = 'cds_ius-18.09.005 xmsim'
+            else:
+                cds_xmelab = 'xmelab'
+                cds_xmsim = 'xmsim'
+
+            xmelab_cmd = "%s tb_lib.tb %s" % (cds_xmelab, ' '.join(xmelab_args))
+            xmsim_cmd = "%s tb %s" % (cds_xmsim, ' '.join(xmsim_args))
             cmd = "%s; %s" % (xmelab_cmd, xmsim_cmd)
             return cmd
 
