@@ -273,6 +273,7 @@ class Runner(Platform):
             self.__create_symlink(self.rtl_path, 'work')
             self.__create_symlink(self.rtl_path, 'tcl_files')
             self.__create_symlink(self.rtl_path, 'waves')
+            self.__create_symlink(self.rtl_path, 'models')
 
 
 

@@ -288,7 +288,8 @@ class Runner(Platform):
             self.__create_symlink(self.rtl_path, 'tcl_files')
             self.__create_symlink(self.rtl_path, 'waves')
             self.__create_symlink(self.rtl_path, 'xcsim_libs')
-            self.__create_symlink(self.rtl_path, 'access.txt')
+            self.__create_symlink(self.rtl_path, 'min_access.txt')
+            self.__create_symlink(self.rtl_path, 'models')
 
         return self.rtl_path
 
@@ -359,8 +360,14 @@ class Runner(Platform):
                                -nowarn STRINT:CUDEFB \
                                -disable_sem2009 \
                                -gateloopwarn \
-                               -afile access.txt \
+                               -show_forces \
                                -dpiheader %s/../tb/tb_driver/dpiheader.h' % (self.__get_rtl_path()))
+
+                               # -always_trigger \
+                               # -default_delay_mode distributed \
+                               # -no_tchk_msg \
+                               # -noassert \
+
 
             xmsim_args.append('-64bit \
                                -licqueue \
@@ -369,13 +376,16 @@ class Runner(Platform):
                                -messages \
                                -xceligen on \
                                -assert_logging_error_off \
-                               +GAP_PATH=%s/../../ \
-                               -input %s/tcl_files/%s' % (self.__get_rtl_path(), self.__get_rtl_path(), "run_and_exit.tcl"))
+                               +GAP_PATH=%s/../../' % (self.__get_rtl_path()))
             xmsim_args.append('-sv_lib %s/install/ws/lib/libpulpdpi' % (os.environ.get('PULP_SDK_HOME')))
            
             if gui:
                 xmelab_args.append('-access +rwc +fsmdebug \
                                     -createdebugdb')
+                xmsim_args.append('-gui')
+            else:
+                xmelab_args.append('-afile min_access.txt')
+                xmsim_args.append('-input %s/tcl_files/%s' % (self.__get_rtl_path(), "run_and_exit.tcl"))
 
             if platform.node()[-len(ETH_NETWORK):] == ETH_NETWORK or platform.node()[-len(UNIBO_NETWORK):] == UNIBO_NETWORK:
                 cds_xmelab = 'cds_ius-18.09.005 xmelab'
