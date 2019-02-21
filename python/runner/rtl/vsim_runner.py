@@ -344,8 +344,10 @@ class Runner(Platform):
                 tcl_args.append('-dpicpppath ' + os.environ.get('QUESTA_CXX'))
 
 
-
-            os.environ['PULP_SDK_DPI_ARGS'] = '-sv_lib %s/install/ws/lib/libpulpdpi' % (os.environ.get('PULP_SDK_HOME'))
+            if os.environ.get('PULP_SDK_HOME') is not None:
+                os.environ['PULP_SDK_DPI_ARGS'] = '-sv_lib %s/install/ws/lib/libpulpdpi' % (os.environ.get('PULP_SDK_HOME'))
+            else:
+                os.environ['PULP_SDK_DPI_ARGS'] = '-sv_lib %s/lib/libpulpdpi' % (os.environ.get('INSTALL_DIR'))
 
             if self.get_json().get('**/use_tb_comps').get():
                 tcl_args.append('-gCONFIG_FILE=rtl_config.json -permit_unmatched_virtual_intf')
