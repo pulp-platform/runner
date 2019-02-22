@@ -138,9 +138,6 @@ class Runner(object):
         self.config.addOption("--src-dir", dest="src_dir", default=os.getcwd(),
                          help="specify the test source directory", metavar="PATH")
         
-        self.config.addOption("--launcher", dest="launcher", default=os.path.join(os.environ['PULP_SDK_HOME'], 'bin', 'launcher'),
-                         help="specify the launcher command to be executed", metavar="CMD")
-        
         self.config.addOption("--commands", dest="showCommands", action="store_true", default=False,
                          help="show the available commands.")
     
@@ -213,7 +210,9 @@ class Runner(object):
 
         try:
 
-            module = imp.load_source('module', self.platforms[platform_name])
+
+            file, path, descr = imp.find_module(self.platforms[platform_name], None)
+            module = imp.load_module('module', file, path, descr)
 
             
 

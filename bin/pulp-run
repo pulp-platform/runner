@@ -25,23 +25,23 @@ import os.path
 import sys
 
 if os.environ.get('PULP_SDK_HOME') is None:
-  os.environ['PULP_SDK_HOME'] = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-  os.environ['PULP_SDK_INSTALL'] = os.path.join(os.environ.get('PULP_SDK_HOME'), 'install')
+  if os.environ.get('INSTALL_DIR') is None:
+    os.environ['PULP_SDK_HOME'] = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+    os.environ['PULP_SDK_INSTALL'] = os.path.join(os.environ.get('PULP_SDK_HOME'), 'install')
+  else:
+    os.environ['PULP_SDK_INSTALL'] = os.environ.get('INSTALL_DIR')
 
-sys.path.append(os.environ['PULP_SDK_HOME'] + '/install/python')
+sys.path.append(os.environ['PULP_SDK_INSTALL'] + '/python')
 
 from plp_runner import *
 
 runner = Runner()
 
-def getRunnerPath(runner):
-    return '%s/install/ws/python/%s' % (os.environ.get('PULP_SDK_HOME'), runner)
-
-runner.addPlatform('gvsoc', getRunnerPath('vp_runner.py'))
-runner.addPlatform('board', getRunnerPath('plp_board_runner.py'))
-runner.addPlatform('rtl', getRunnerPath('runner/rtl/runner.py'))
-runner.addPlatform('hsa', getRunnerPath('plp_hsa_runner.py'))
-runner.addPlatform('fpga', getRunnerPath('plp_rtl_emu_runner.py'))
+runner.addPlatform('gvsoc', 'vp_runner')
+runner.addPlatform('board', 'plp_board_runner')
+runner.addPlatform('rtl', 'runner/rtl/runner')
+runner.addPlatform('hsa', 'plp_hsa_runner')
+runner.addPlatform('fpga', 'plp_rtl_emu_runner')
 
 retval = runner.run()
 exit(retval)
