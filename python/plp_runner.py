@@ -26,8 +26,8 @@ import os
 import sys
 import re
 import imp
-import plptree
 import json_tools as js
+import pulp_config as plpconf
 
 class Property(object):
     def __init__(self, path, className, compName, propertyName, value):
@@ -129,14 +129,14 @@ class Runner(object):
 
         self.config.addOption("--platform", dest="platform", default=None, choices=list(self.platforms.keys()), help="specify the platform. Default: %(default)s.")
     
-        self.config.addOption("--prop", dest="props", action="append",
-                         help="specify a property to be given to the platform", metavar="PATH")
-        
+        self.config.addOption("--binary", dest="binary", default=[], action="append",
+                            help='specify the binary to be loaded')
+
         self.config.addOption("--dir", dest="dir", default=os.getcwd(),
                          help="specify the test directory containing the binaries and from which the execution must be launched.", metavar="PATH")
         
-        self.config.addOption("--launcher", dest="launcher", default=os.path.join(os.environ['PULP_SDK_HOME'], 'bin', 'launcher'),
-                         help="specify the launcher command to be executed", metavar="CMD")
+        self.config.addOption("--src-dir", dest="src_dir", default=os.getcwd(),
+                         help="specify the test source directory", metavar="PATH")
         
         self.config.addOption("--commands", dest="showCommands", action="store_true", default=False,
                          help="show the available commands.")
@@ -152,23 +152,21 @@ class Runner(object):
         self.config.addOption("--no-warnings", dest="warnings", action="store_false", default=True,
                          help='deactivate warnings')
 
-        self.config.addOption("--config", dest="config", default=None, help='specify the system configuration')
+        self.config.addOption("--config", dest="config_name", default=None, help='specify the system configuration name')
 
         self.config.addOption("--reentrant", dest="reentrant", action="store_true", help='This script was called was pulp-run')
 
-        self.config.addOption("--config-file", dest="configFile", default=None, help='specify the system configuration file')
+        self.config.addOption("--config-file", dest="config_file", default=None, help='specify the system configuration file')
 
-        self.config.addOption("--config-opt", dest="configOpt", default=[], action="append", help='specify configuration option')
+        self.config.addOption("--config-user", dest="config_user", default=[], action="append", help='specify the user configuration file')
+
+        self.config.addOption("--config-opt", dest="configOpt", default=[], action="append", help='specify configuration option (DEPRECATED)')
+
+        self.config.addOption("--property", dest="properties", default=[], action="append", help='specify configuration property')
 
         if self.config.getOption('dev'):
             self.config.addOption("--py-stack", dest="pyStack", action="store_true", default=False,
                             help="activate Python tracestack")
-
-        props = self.config.getOption('props')
-        if props != None:
-            for rawProp in props:
-                prop = rawProp.split(':')
-                self.config.setProperty(propertyName=prop[1], value=prop[2], path=prop[0])
 
 
         testPath = os.path.abspath(self.config.getOption('dir'))
@@ -178,57 +176,55 @@ class Runner(object):
             pass
         os.chdir(testPath)
 
-        systemConfig = self.config.getOption('config')
-        if systemConfig != None:
-            self.system_tree = plptree.get_configs_from_env(self.config.args.configDef, systemConfig)
-        else:
-            self.system_tree = plptree.get_configs_from_file(self.config.getOption('configFile'))[0]
-
-        self.pyStack = self.system_tree.get_bool('runner/py-stack')
 
 
+        config_path = self.config.getOption('config_file')
+        config_name = self.config.getOption('config_name')
 
-        # First get the json configuration
-        config_path = self.config.getOption('configFile')
-        chip = self.config.getOption('chip')
+        if config_path is None:
 
-        if chip is not None:
+            if config_name is None:
+                raise Exception('A config name or a config file must be specified')
+
             config_path = os.path.join(
                 os.path.dirname(os.path.dirname(sys.argv[0])),
-                'configs', 'systems', '%s.json' % chip
+                'configs', 'chips', config_name, '%s.json' % config_name
             )
-        elif config_path is None:
-            raise Exception('A chip or a config file must be specified')
 
-        config = js.import_config_from_file(config_path)
+
+        config = plpconf.get_config(config_path, ini_configs=self.config.getOption('config_user'), ini_configs_dict={'srcdir': self.config.getOption('src_dir')}, config_opts=self.config.getOption('configOpt'), properties=self.config.getOption('properties'), interpret=True)
+
+        self.pyStack = config.get_child_bool('**/runner/py-stack')
 
 
         platform = self.config.getOption('platform')
         if platform is not None:
             config.set('platform', platform)
 
+        if self.config.getOption('binary') is not None:
+            for binary in self.config.getOption('binary'):
+                config.get('**/runner').set('binaries', binary)
 
-        self.system_tree = plptree.get_config_tree_from_dict(config.get_dict())
 
         platform_name = config.get('**/platform').get()
 
-        if platform_name == 'gvsoc' and self.system_tree.get('pulp_chip') not in []:
-            platform_name = 'vp'
-
         try:
 
-            module = imp.load_source('module', self.platforms[platform_name])
+
+            file, path, descr = imp.find_module(self.platforms[platform_name], None)
+            module = imp.load_module('module', file, path, descr)
 
             
 
             platform = module.Runner(self.config, config)
 
             for module in self.modules:
-                platform.addParser(module(self.config, self.system_tree))
+                platform.addParser(module(self.config, config))
 
             retval = platform.handleCommands()
             return retval
         except Exception as e:
+            raise
             if self.pyStack:
                 raise
             else:

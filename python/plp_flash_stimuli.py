@@ -109,25 +109,57 @@ class FlashImage(object):
         for i in range(0, padsize):
             self.buff.append(0)
 
-    def __pad(self, padsize):
-        self.flashOffset += padsize
-        for i in range(0, padsize):
-            self.buff.append(0)
+    def __pad(self, padsize, buff=None):
+        if buff is None:
+            self.flashOffset += padsize
+            for i in range(0, padsize):
+                self.buff.append(0)
+        else:
+            for i in range(0, padsize):
+                buff = self.__appendByte(0, buff=buff)
+            return buff
 
-    def __appendInt(self, value, newBlock=False):
-        #if newBlock: self.__roundToNextBlock()
-        self.buff += struct.pack("I", value)
-        self.flashOffset += 4
+    def __appendInt(self, value, newBlock=False, buff=None):
+        if buff is None:
+            #if newBlock: self.__roundToNextBlock()
+            self.buff += struct.pack("I", value)
+            self.flashOffset += 4
+        else:
+            buff += struct.pack("I", value)
+            return buff
 
-    def __appendByte(self, value, newBlock=False):
-        #if newBlock: self.__roundToNextBlock()
-        self.buff += struct.pack("B", value)
-        self.flashOffset += 1
+    def __appendByte(self, value, newBlock=False, buff=None):
+        if buff is None:
+            #if newBlock: self.__roundToNextBlock()
+            self.buff += struct.pack("B", value)
+            self.flashOffset += 1
+        else:
+            buff += struct.pack("B", value)
+            return buff
+
+
+    def get_crc(self, buff):
+        crc = 0xffffffff
+        for data in buff:
+            crc = crc ^ data
+            for i in range(7, -1, -1):
+                if crc & 1 == 1:
+                    mask = 0xffffffff
+                else:
+                    mask = 0
+                crc2 = crc >> 1
+                crc = (crc >> 1) ^ (0xEDB88320 & mask)
+
+        return (crc ^ 0xffffffff)
+
 
     def __appendBuffer(self, buffer, newBlock=False, pad=False, encrypt=False, padToOffset=None):
         #if newBlock: self.__roundToNextBlock()
         if self.encrypt:
             cmd = 'aes_encode %s %s' % (self.aesKey, self.aesIv)
+
+            crc = self.get_crc(buffer)
+            buffer += struct.pack("I", crc)
 
             p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
             out, err = p.communicate(buffer)
@@ -135,10 +167,13 @@ class FlashImage(object):
                 raise Exception('Error when executing aes_encore to encrypt binary, probably this tool is not available')
             buffer = out
 
-        if padToOffset != None: self.__pad(padToOffset - self.flashOffset)
+        if padToOffset != None:
+            self.__pad(padToOffset - self.flashOffset)
+
         self.buff += buffer
         self.flashOffset += len(buffer)
-        if pad: self.__padBlock(len(buffer))
+        if pad:
+            self.__padBlock(len(buffer))
 
 
 
@@ -210,9 +245,16 @@ class FlashImage(object):
 
         # First compute areas flash information
         flashOffset = 0
-        flashOffset += 4 + 4 + 4 + 4 + len(self.bootBinary.segments) * 4 * 4
+        flashOffset += 4 + 4 + 4 + 4 + 16 * 4 * 4
+
+        crc_offset = flashOffset
+        flashOffset += 4
 
         flashOffset = (flashOffset + self.blockSize - 1) & ~(self.blockSize - 1)
+
+        if self.encrypt:
+            for segment in self.bootBinary.segments:
+                segment.size += 4
 
         index = 0
         for segment in self.bootBinary.segments:
@@ -225,17 +267,26 @@ class FlashImage(object):
 
         # Then write the header containing memory areas declaration
         self.fsOffset = flashOffset
-        self.__appendInt(flashOffset)
-        self.__appendInt(len(self.bootBinary.segments))
+
+        header_buff = bytes([])
+        header_buff = self.__appendInt(flashOffset, buff=header_buff)
+        header_buff = self.__appendInt(len(self.bootBinary.segments), buff=header_buff)
         #self.__appendInt(self.bootBinary.entry)
-        self.__appendInt(self.bootBinary.entry)
-        self.__appendInt(self.bootaddr)
+        header_buff = self.__appendInt(self.bootBinary.entry, buff=header_buff)
+        header_buff = self.__appendInt(self.bootaddr, buff=header_buff)
 
         for area in self.bootBinary.segments:
-            self.__appendInt(area.offset)
-            self.__appendInt(area.base)
-            self.__appendInt(area.size)
-            self.__appendInt(area.nbBlocks)
+            header_buff = self.__appendInt(area.offset, buff=header_buff)
+            header_buff = self.__appendInt(area.base, buff=header_buff)
+            header_buff = self.__appendInt(area.size, buff=header_buff)
+            header_buff = self.__appendInt(area.nbBlocks, buff=header_buff)
+
+        header_buff = self.__pad(crc_offset - self.flashOffset - len(header_buff), buff=header_buff)
+        crc = self.get_crc(header_buff)
+        header_buff = self.__appendInt(crc, buff=header_buff)
+        self.__appendBuffer(header_buff, encrypt=self.encrypt)
+
+
 
         # Finally write the data
         for area in self.bootBinary.segments:

@@ -1,6 +1,6 @@
-WORKSTATION_PKG ?= $(PULP_SDK_WS_INSTALL)
+WORKSTATION_PKG ?= $(INSTALL_DIR)
 
-HEADER_FILES += $(shell find python -name *.py)
+HEADER_FILES += $(shell find python -name "*.py")
 
 
 define declareInstallFile
@@ -21,5 +21,4 @@ sdk.build: $(INSTALL_HEADERS)
 	install -d $(WORKSTATION_PKG)/bin
 	install -d $(WORKSTATION_PKG)/ref
 	install -D bin/* $(WORKSTATION_PKG)/bin
-	install -D ref/* $(WORKSTATION_PKG)/ref
 	-gcc -O3 -o $(WORKSTATION_PKG)/bin/aes_encode aes/AesLib.c aes/main.c

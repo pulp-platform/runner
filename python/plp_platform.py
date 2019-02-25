@@ -26,14 +26,14 @@ import ast
 
 class Platform(object):
 
-    def __init__(self, config, tree):
+    def __init__(self, config, js_config):
         self.commands = []
         self.modules = []
         self.config = config
-        self.tree = tree
+        self.js_config = js_config
 
     def get_json(self):
-        return self.tree
+        return self.js_config
 
     def addParser(self, parser):
         self.modules.append(parser)

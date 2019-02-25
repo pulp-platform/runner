@@ -35,15 +35,12 @@ class Runner(Platform):
 
 
 
-    def __init__(self, config, tree):
+    def __init__(self, config, js_config):
 
-        super(Runner, self).__init__(config, tree)
+        super(Runner, self).__init__(config, js_config)
         
         parser = config.getParser()
 
-        parser.add_argument("--binary", dest="binary",
-                            help='specify the binary to be loaded')
-                        
         parser.add_argument("--boot-from-flash", dest="boot_from_flash",
                             action="store_true", help='boot from flash')
                         
@@ -56,10 +53,10 @@ class Runner(Platform):
         # Overwrite JSON configuration with specific options
         binary = self.config.getOption('binary')
         if binary is not None:
-            tree.get('**/runner').set('binary', binary)
+            js_config.get('**/runner').set('binary', binary)
 
         if self.config.getOption('boot from flash'):
-            tree.get('**/runner').set('boot from flash', True)
+            js_config.get('**/runner').set('boot from flash', True)
 
         self.env = {}
         self.rtl_path = None
@@ -87,7 +84,7 @@ class Runner(Platform):
 
     def __check_env(self):
         if self.get_json().get_child_str('**/runner/boot-mode').find('rom') != -1:
-            if self.tree.get_child_str('**/vsim/boot-mode') in ['jtag']:
+            if self.get_json().get_child_str('**/vsim/boot-mode') in ['jtag']:
                 self.get_json().get('**/runner').set('boot_from_flash', False)
             else:
                 self.get_json().get('**/runner').set('boot_from_flash', True)
@@ -97,14 +94,14 @@ class Runner(Platform):
 
         self.__check_env()
 
-        if self.tree.get('**/runner/boot_from_flash').get():
+        if self.get_json().get('**/runner/boot_from_flash').get():
 
             # Boot from flash, we need to generate the flash image
             # containing the application binary.
             # This will generate SLM files used by the RTL platform
             # to preload the flash.
             comps = []
-            fs = self.tree.get('**/fs')
+            fs = self.get_json().get('**/fs')
             if fs is not None:
                 comps_conf = self.get_json().get('**/flash/fs/files')
                 if comps_conf is not None:
@@ -115,27 +112,27 @@ class Runner(Platform):
             aes_iv = self.get_json().get_child_str('**/efuse/aes_iv')
 
             if plp_flash_stimuli.genFlashImage(
-                slmStim=self.tree.get('**/runner/flash_slm_file').get(),
-                bootBinary=self.get_json().get('**/loader/binaries').get_elem(0).get(),
+                slmStim=self.get_json().get('**/runner/flash_slm_file').get(),
+                bootBinary=self.get_json().get('**/runner/binaries').get_elem(0).get(),
                 comps=comps,
-                verbose=self.tree.get('**/runner/verbose').get(),
-                archi=self.tree.get('**/pulp_chip_family').get(),
-                flashType=self.tree.get('**/runner/flash_type').get(),
+                verbose=self.get_json().get('**/runner/verbose').get(),
+                archi=self.get_json().get('**/pulp_chip_family').get(),
+                flashType=self.get_json().get('**/runner/flash_type').get(),
                 encrypt=encrypted, aesKey=aes_key, aesIv=aes_iv):
                 return -1
 
         else:
 
-            stim = runner.stim_utils.stim(verbose=self.tree.get('**/runner/verbose').get())
+            stim = runner.stim_utils.stim(verbose=self.get_json().get('**/runner/verbose').get())
 
-            for binary in self.get_json().get('**/loader/binaries').get_dict():
+            for binary in self.get_json().get('**/runner/binaries').get_dict():
                 stim.add_binary(binary)
 
             stim.gen_stim_slm_64('vectors/stim.txt')
 
 
         if self.get_json().get('**/efuse') is not None:
-            efuse = runner.stim_utils.Efuse(self.get_json(), verbose=self.tree.get('**/runner/verbose').get())
+            efuse = runner.stim_utils.Efuse(self.get_json(), verbose=self.get_json().get('**/runner/verbose').get())
             efuse.gen_stim_txt('efuse_preload.data')
 
         return 0
@@ -144,7 +141,7 @@ class Runner(Platform):
     def __check_debug_bridge(self):
 
         gdb = self.get_json().get('**/gdb/active')
-        autorun = self.tree.get('**/debug_bridge/autorun')
+        autorun = self.get_json().get('**/debug_bridge/autorun')
 
         bridge_active = False
 
@@ -158,7 +155,7 @@ class Runner(Platform):
         if bridge_active:
             # Increase the access timeout to not get errors as the RTL platform
             # is really slow
-            self.tree.get('**/debug_bridge/cable').set('access_timeout_us', 10000000)
+            self.get_json().get('**/debug_bridge/cable').set('access_timeout_us', 10000000)
 
 
 
@@ -175,11 +172,13 @@ class Runner(Platform):
         with open('rtl_config.json', 'w') as file:
             file.write(self.get_json().dump_to_string())
 
+        if not os.path.exists('stdout'):
+            os.makedirs('stdout')
 
 
         cmd = self.__get_sim_cmd()
 
-        autorun = self.tree.get('**/debug_bridge/autorun')
+        autorun = self.get_json().get('**/debug_bridge/autorun')
         if autorun is not None and autorun.get():
             print ('Setting VSIM env')
             print (self.env)
@@ -200,11 +199,11 @@ class Runner(Platform):
             if port is None:
                 return -1
 
-            options = self.tree.get_child_str('**/debug_bridge/options')
+            options = self.get_json().get_child_str('**/debug_bridge/options')
             if options is None:
                 options  = ''
 
-            bridge_cmd = 'plpbridge --config=rtl_config.json --verbose=10 --port=%s %s' % (port, options)
+            bridge_cmd = 'plpbridge --config=%s/rtl_config.json --verbose=10 --port=%s %s' % (os.getcwd(), port, options)
             print ('Launching bridge with command:')
             print (bridge_cmd)
             time.sleep(10)
@@ -242,9 +241,9 @@ class Runner(Platform):
 
         if self.rtl_path is None:
 
-            vsim_chip = self.tree.get_child_str('**/runner/vsim_chip')
+            vsim_chip = self.get_json().get_child_str('**/runner/vsim_chip')
             if vsim_chip is None:
-                vsim_chip = self.tree.get('**/pulp_chip_family').get()
+                vsim_chip = self.get_json().get('**/pulp_chip_family').get()
 
             chip_path_name = 'PULP_RTL_%s' % vsim_chip.upper()
             chip_path = os.environ.get(chip_path_name)
@@ -286,51 +285,82 @@ class Runner(Platform):
     def __get_sim_cmd(self):
 
 
-        simulator = self.tree.get_child_str('**/runner/rtl_simulator')
+        simulator = self.get_json().get_child_str('**/runner/rtl_simulator')
 
         if simulator == 'vsim':
 
-            vsim_script = self.tree.get_child_str('**/vsim/script')
-            tcl_args = self.tree.get('**/vsim/tcl_args').get_dict()
-            vsim_args = self.tree.get('**/vsim/args').get_dict()
-            gui = self.tree.get_child_str('**/vsim/gui')
+            vsim_script = self.get_json().get_child_str('**/vsim/script')
+            tcl_args = self.get_json().get('**/vsim/tcl_args').get_dict()
+            vsim_args = self.get_json().get('**/vsim/args').get_dict()
+            gui = self.get_json().get_child_str('**/vsim/gui')
 
-            recordwlf = self.tree.get_child_str('**/vsim/recordwlf')
-            vsimdofile = self.tree.get_child_str('**/vsim/dofile')
-            enablecov = self.tree.get_child_str('**/vsim/enablecov')
-            vopt_args = self.tree.get_child_str('**/vsim/vopt_args')
+            recordwlf = self.get_json().get_child_str('**/vsim/recordwlf')
+            vsimdofile = self.get_json().get_child_str('**/vsim/dofile')
+            enablecov = self.get_json().get_child_str('**/vsim/enablecov')
+            enableJtagTargetSync = self.get_json().get_child_str('**/vsim/enableJtagTargetSync')
+            vopt_args = self.get_json().get_child_str('**/vsim/vopt_args')
+            if os.environ.get('USE_NETLIST'):
+                if os.environ.get('USE_PGPIN_NETLIST'):
+                    if gui:
+                        vsim_args.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_rtl_path())
+                        vsim_args.append("-do 'source %s/tcl_files/go_5_dec.tcl'" % (self.__get_rtl_path()))
+                        vsim_args.append("-do 'source %s/tcl_files/%s; set_osi_pgpin_netlist_tcheck;'" % (self.__get_rtl_path(), vsim_script))
+                    else:
+                        vsim_args.append("-c")
+                        vsim_args.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_rtl_path())
+                        vsim_args.append("-do 'source %s/tcl_files/go_5_dec.tcl'" % (self.__get_rtl_path()))
+                        vsim_args.append("-do 'source %s/tcl_files/%s'" % (self.__get_rtl_path(), vsim_script))
+                        vsim_args.append("-do 'source %s/tcl_files/exec_pgpin.tcl'" % (self.__get_rtl_path()))
+                else:
+                    if gui:
+                        vsim_args.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_rtl_path())
+                        vsim_args.append("-do 'source %s/tcl_files/go_5_dec.tcl'" % (self.__get_rtl_path()))
+                        vsim_args.append("-do 'source %s/tcl_files/%s; set_osi_netlist_tcheck;'" % (self.__get_rtl_path(), vsim_script))
+                    else:
+                        vsim_args.append("-c")
+                        vsim_args.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_rtl_path())
+                        vsim_args.append("-do 'source %s/tcl_files/go_5_dec.tcl'" % (self.__get_rtl_path()))
+                        vsim_args.append("-do 'source %s/tcl_files/%s'" % (self.__get_rtl_path(), vsim_script))
+                        vsim_args.append("-do 'source %s/tcl_files/exec.tcl'" % (self.__get_rtl_path()))
+            else:
+                if gui:
+                    vsim_args.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_rtl_path())
+                    vsim_args.append("-do 'source %s/tcl_files/%s'" % (self.__get_rtl_path(), vsim_script))
+                else:
+                    vsim_args.append("-c")
+                    vsim_args.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_rtl_path())
+                    vsim_args.append("-do 'source %s/tcl_files/%s; run_and_exit;'" % (self.__get_rtl_path(), vsim_script))
 
-
-            if not self.tree.get('**/runner/boot_from_flash').get():
+            if not self.get_json().get('**/runner/boot_from_flash').get():
                 tcl_args.append('-gLOAD_L2=JTAG')
 
-            if self.tree.get_child_str('**/chip/name') == 'vivosoc3':
+            if self.get_json().get_child_str('**/chip/name') == 'vivosoc3':
                 tcl_args.append("-gBOOT_ADDR=32'h1C004000")
 
-            autorun = self.tree.get('**/debug_bridge/autorun')
-            if self.tree.get('**/runner/use_external_tb').get() or \
+            autorun = self.get_json().get('**/debug_bridge/autorun')
+            if self.get_json().get('**/runner/use_external_tb').get() or \
               autorun is not None and autorun.get():
                 tcl_args.append('-gENABLE_EXTERNAL_DRIVER=1')
 
-            if self.tree.get('**/runner/boot_from_flash').get():
-              if self.tree.get('**/runner/flash_type').get() == 'spi':
+            if self.get_json().get('**/runner/boot_from_flash').get():
+              if self.get_json().get('**/runner/flash_type').get() == 'spi':
                 tcl_args.append('-gSPI_FLASH_LOAD_MEM=1')
-              elif self.tree.get('**/runner/flash_type').get() == 'hyper':
+              elif self.get_json().get('**/runner/flash_type').get() == 'hyper':
                 tcl_args.append('-gHYPER_FLASH_LOAD_MEM=1')
 
-                if self.tree.get_child_str('**/pulp_chip_family') == 'gap':
+                if self.get_json().get_child_str('**/pulp_chip_family') == 'gap':
                     tcl_args.append('+VSIM_PADMUX_CFG=TB_PADMUX_ALT3_HYPERBUS')
                     tcl_args.append('+VSIM_BOOTTYPE_CFG=TB_BOOT_FROM_HYPER_FLASH')
 
-                if self.tree.get_child_str('**/chip/name') == 'vega':
+                if self.get_json().get_child_str('**/chip/name') == 'vega':
                     tcl_args.append('-gLOAD_L2=HYPER_DEV')
                     tcl_args.append('+VSIM_BOOTTYPE_CFG=TB_BOOT_FROM_HYPER_FLASH')
 
-              if self.tree.get_child_str('**/chip/name') == 'wolfe':
-                bootsel = 1 if self.tree.get('**/runner/flash_type').get() == 'hyper' else 0
+              if self.get_json().get_child_str('**/chip/name') == 'wolfe':
+                bootsel = 1 if self.get_json().get('**/runner/flash_type').get() == 'hyper' else 0
                 tcl_args.append('-gBOOTSEL=%d' % bootsel)
 
-              if self.tree.get_child_str('**/chip/name') in [ 'pulp', 'pulpissimo' ]:
+              if self.get_json().get_child_str('**/chip/name') in [ 'pulp', 'pulpissimo', 'arnold' ]:
                 tcl_args.append('-gLOAD_L2=STANDALONE')
 
 
@@ -338,10 +368,12 @@ class Runner(Platform):
                 tcl_args.append('-dpicpppath ' + os.environ.get('QUESTA_CXX'))
 
 
+            if os.environ.get('PULP_SDK_HOME') is not None:
+                os.environ['PULP_SDK_DPI_ARGS'] = '-sv_lib %s/install/ws/lib/libpulpdpi' % (os.environ.get('PULP_SDK_HOME'))
+            else:
+                os.environ['PULP_SDK_DPI_ARGS'] = '-sv_lib %s/lib/libpulpdpi' % (os.environ.get('INSTALL_DIR'))
 
-            os.environ['PULP_SDK_DPI_ARGS'] = '-sv_lib %s/install/ws/lib/libpulpdpi' % (os.environ.get('PULP_SDK_HOME'))
-
-            if self.tree.get('**/use_tb_comps').get():
+            if self.get_json().get('**/use_tb_comps').get():
                 tcl_args.append('-gCONFIG_FILE=rtl_config.json -permit_unmatched_virtual_intf')
 
                 tcl_args.append(os.environ['PULP_SDK_DPI_ARGS'])
@@ -350,8 +382,12 @@ class Runner(Platform):
                 tcl_args.append('-permit_unmatched_virtual_intf')
                 
 
-            if self.tree.get('**/efuse') is not None:
+            if self.get_json().get('**/efuse') is not None:
                 tcl_args.append('+preload_file=efuse_preload.data') #+debug=1  Add that to get debug messages from efuse
+
+            baudrate = self.get_json().get_child_int('**/uart/baudrate')
+            if baudrate is not None:
+                tcl_args.append('-gBAUDRATE=%d' % baudrate)
 
             if gui:
                 self.set_env('VOPT_ACC_ENA', 'YES')
@@ -369,7 +405,10 @@ class Runner(Platform):
                 # if vopt_args is None:
                 #     vopt_args = list()
                 # vopt_args.append('+cover=sbecft+pulp_chip.')
-                # tree.get('**/vsim').set('vopt_args', option)
+                # js_config.get('**/vsim').set('vopt_args', option)
+
+            if enableJtagTargetSync:
+                tcl_args.append('+ENABLE_JTAG_TARGET_SYNC=1')
 
             if len(tcl_args) != 0:
                 self.set_env('VSIM_RUNNER_FLAGS', ' '.join(tcl_args))
@@ -386,7 +425,11 @@ class Runner(Platform):
                 vsim_args.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_rtl_path())
                 vsim_args.append("-do 'source %s/tcl_files/%s; run_and_exit;'" % (self.__get_rtl_path(), vsim_script))
 
-            cmd = "vsim -64 %s" % (' '.join(vsim_args))
+            vsim_cmd = os.environ.get('VSIM_COMMAND')
+            if vsim_cmd is None:
+                vsim_cmd = "vsim -64"
+
+            cmd = "%s %s" % (vsim_cmd, ' '.join(vsim_args))
 
 
             return cmd
