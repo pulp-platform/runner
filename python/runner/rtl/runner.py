@@ -21,17 +21,19 @@
 from plp_platform import *
 import runner.rtl.vsim_runner
 import runner.rtl.xcelium_runner
+import imp
 
 
 
 def get_runner(chip, tree):
     sim = tree.get_child_str('**/runner/simulator')
-    if sim in [ None, 'vsim' ]:
-        return runner.rtl.vsim_runner.Runner
-    elif sim == 'xcelium':
-        return runner.rtl.xcelium_runner.Runner
-    else:
-        raise Exception('Unknown RTL simulator: ' + sim)
+
+    runner_class = tree.get_str('**/vsim/%s_runner_class' % sim)
+
+    file, path, descr = imp.find_module(runner_class, None)
+    module = imp.load_module('module', file, path, descr)
+
+    return module.Runner
 
 
 # This class is just a stub class which will return the proper class

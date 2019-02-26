@@ -27,11 +27,12 @@ import shlex
 import io
 import runner.stim_utils
 from shutil import copyfile
+import runner.rtl.common_runner as runner
 
 
 # This class is the default runner for all chips but can be overloaded
 # for specific chips in order to change a bit the behavior.
-class Runner(Platform):
+class Runner(runner.Runner):
 
 
 
@@ -39,28 +40,6 @@ class Runner(Platform):
 
         super(Runner, self).__init__(config, js_config)
         
-        parser = config.getParser()
-
-        parser.add_argument("--boot-from-flash", dest="boot_from_flash",
-                            action="store_true", help='boot from flash')
-                        
-        [args, otherArgs] = parser.parse_known_args()
-
-        self.addCommand('run', 'Run execution on RTL simulator')
-        self.addCommand('prepare', 'Prepare binary for RTL simulator (SLM files, etc)')
-
-
-        # Overwrite JSON configuration with specific options
-        binary = self.config.getOption('binary')
-        if binary is not None:
-            js_config.get('**/runner').set('binary', binary)
-
-        if self.config.getOption('boot from flash'):
-            js_config.get('**/runner').set('boot from flash', True)
-
-        self.env = {}
-        self.rtl_path = None
-
 
     def power(self):
         os.environ['POWER_VCD_FILE'] = os.path.join(os.getcwd(), 'cluster_domain.vcd.gz')
@@ -81,160 +60,6 @@ class Runner(Platform):
             return -1
 
         return 0
-
-    def __check_env(self):
-        if self.get_json().get_child_str('**/runner/boot-mode').find('rom') != -1:
-            if self.get_json().get_child_str('**/vsim/boot-mode') in ['jtag']:
-                self.get_json().get('**/runner').set('boot_from_flash', False)
-            else:
-                self.get_json().get('**/runner').set('boot_from_flash', True)
-
-
-    def prepare(self):
-
-        self.__check_env()
-
-        if self.get_json().get('**/runner/boot_from_flash').get():
-
-            # Boot from flash, we need to generate the flash image
-            # containing the application binary.
-            # This will generate SLM files used by the RTL platform
-            # to preload the flash.
-            comps = []
-            fs = self.get_json().get('**/fs')
-            if fs is not None:
-                comps_conf = self.get_json().get('**/flash/fs/files')
-                if comps_conf is not None:
-                    comps = comps_conf.get_dict()
-
-            encrypted = self.get_json().get_child_str('**/efuse/encrypted')
-            aes_key = self.get_json().get_child_str('**/efuse/aes_key')
-            aes_iv = self.get_json().get_child_str('**/efuse/aes_iv')
-
-            if plp_flash_stimuli.genFlashImage(
-                slmStim=self.get_json().get('**/runner/flash_slm_file').get(),
-                bootBinary=self.get_json().get('**/runner/binaries').get_elem(0).get(),
-                comps=comps,
-                verbose=self.get_json().get('**/runner/verbose').get(),
-                archi=self.get_json().get('**/pulp_chip_family').get(),
-                flashType=self.get_json().get('**/runner/flash_type').get(),
-                encrypt=encrypted, aesKey=aes_key, aesIv=aes_iv):
-                return -1
-
-        else:
-
-            stim = runner.stim_utils.stim(verbose=self.get_json().get('**/runner/verbose').get())
-
-            for binary in self.get_json().get('**/runner/binaries').get_dict():
-                stim.add_binary(binary)
-
-            stim.gen_stim_slm_64('vectors/stim.txt')
-
-
-        if self.get_json().get('**/efuse') is not None:
-            efuse = runner.stim_utils.Efuse(self.get_json(), verbose=self.get_json().get('**/runner/verbose').get())
-            efuse.gen_stim_txt('efuse_preload.data')
-
-        return 0
-
-
-    def __check_debug_bridge(self):
-
-        gdb = self.get_json().get('**/gdb/active')
-        autorun = self.get_json().get('**/debug_bridge/autorun')
-
-        bridge_active = False
-
-        if gdb is not None and gdb.get_bool() or autorun is not None and autorun.get_bool():
-            bridge_active = True
-            self.get_json().get('**/jtag_proxy').set('active', True)
-            self.get_json().get('**/runner').set('use_tb_comps', True)
-            self.get_json().get('**/runner').set('use_external_tb', True)
-
-
-        if bridge_active:
-            # Increase the access timeout to not get errors as the RTL platform
-            # is really slow
-            self.get_json().get('**/debug_bridge/cable').set('access_timeout_us', 10000000)
-
-
-
-    def run(self):
-
-        self.__check_env()
-
-        if self.get_json().get('**/runner/peripherals') is not None:
-            self.get_json().get('**/runner').set('use_tb_comps', True)
-
-        self.__check_debug_bridge()
-
-
-        with open('rtl_config.json', 'w') as file:
-            file.write(self.get_json().dump_to_string())
-
-        if not os.path.exists('stdout'):
-            os.makedirs('stdout')
-
-
-        cmd = self.__get_sim_cmd()
-
-        autorun = self.get_json().get('**/debug_bridge/autorun')
-        if autorun is not None and autorun.get():
-            print ('Setting VSIM env')
-            print (self.env)
-            os.environ.update(self.env)
-
-            print ('Launching VSIM with command:')
-            print (cmd)
-            vsim = subprocess.Popen(shlex.split(cmd),stderr=subprocess.PIPE, bufsize=1)
-            port = None
-            for line in io.TextIOWrapper(vsim.stderr, encoding="utf-8"):
-                sys.stderr.write(line)
-                string = 'Proxy listening on port '
-                pos = line.find(string)
-                if pos != -1:
-                    port = line[pos + len(string):]
-                    break
-
-            if port is None:
-                return -1
-
-            options = self.get_json().get_child_str('**/debug_bridge/options')
-            if options is None:
-                options  = ''
-
-            bridge_cmd = 'plpbridge --config=%s/rtl_config.json --verbose=10 --port=%s %s' % (os.getcwd(), port, options)
-            print ('Launching bridge with command:')
-            print (bridge_cmd)
-            time.sleep(10)
-            bridge = subprocess.Popen(shlex.split(bridge_cmd))
-            
-            retval = bridge.wait()
-            vsim.terminate()
-
-            return retval
-
-        else:
-            for key, value in self.env.items():
-                cmd = 'export %s="%s" && ' % (key, value) + cmd
-
-            print ('Launching VSIM with command:')
-            print (cmd)
-
-            if os.system(cmd) != 0: 
-                print ('VSIM reported an error, leaving')
-                return -1
-
-        
-
-        return 0
-
-
-    def __create_symlink(self, rtl_path, name):
-        if os.path.islink(name):
-          os.remove(name)
-
-        os.symlink(os.path.join(rtl_path, name), name)
 
 
     def __get_rtl_path(self):
@@ -277,10 +102,6 @@ class Runner(Platform):
 
 
         return self.rtl_path
-
-
-    def set_env(self, key, value):
-        self.env[key] = value
 
     def __get_sim_cmd(self):
 
