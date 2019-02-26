@@ -417,14 +417,6 @@ class Runner(Platform):
                 if len(vopt_args) != 0:
                     self.set_env('VOPT_RUNNER_FLAGS', ' '.join(vopt_args))
 
-            if gui:
-                vsim_args.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_rtl_path())
-                vsim_args.append("-do 'source %s/tcl_files/%s;'" % (self.__get_rtl_path(), vsim_script))
-            else:
-                vsim_args.append("-c")
-                vsim_args.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_rtl_path())
-                vsim_args.append("-do 'source %s/tcl_files/%s; run_and_exit;'" % (self.__get_rtl_path(), vsim_script))
-
             vsim_cmd = os.environ.get('VSIM_COMMAND')
             if vsim_cmd is None:
                 vsim_cmd = "vsim -64"
