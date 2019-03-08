@@ -28,3 +28,8 @@ class Runner(runner.Runner):
 
         super(Runner, self).__init__(config, js_config)
         
+        # All dev modes should set padsel pad to 1 so that boot code knows
+        # it should stop and the external loader take over the boot through JTAG
+        boot = self.get_json().get_child_str('**/runner/boot-mode')
+        if boot.find('_dev') != -1:
+        	self.set_param('', 1)

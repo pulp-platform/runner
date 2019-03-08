@@ -37,6 +37,8 @@ class Runner(Platform):
 
         super(Runner, self).__init__(config, js_config)
         
+        self.params = {}
+
         parser = config.getParser()
 
         parser.add_argument("--gui", dest="gui",
@@ -89,6 +91,9 @@ class Runner(Platform):
         self.env = {}
         self.rtl_path = None
 
+
+    def set_param(self, name, value):
+        self.params[name] = value
 
     def power(self):
         os.environ['POWER_VCD_FILE'] = os.path.join(os.getcwd(), 'cluster_domain.vcd.gz')
