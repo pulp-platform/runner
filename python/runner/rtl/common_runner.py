@@ -33,9 +33,6 @@ from shutil import copyfile
 # This class is the default runner for all chips but can be overloaded
 # for specific chips in order to change a bit the behavior.
 class Runner(Platform):
-
-
-
     def __init__(self, config, js_config):
 
         super(Runner, self).__init__(config, js_config)
@@ -45,8 +42,20 @@ class Runner(Platform):
         parser.add_argument("--gui", dest="gui",
                             action="store_true", help='Open the GUI')
                         
+        self.config.addOption("--simulator", dest="simulator", default=None, help='specify the rtl simulator to be used: Mentor vsim or Cadence xcelium')
+
+        parser.add_argument("--vsim-recordwlf", dest="vsim_recordwlf",
+                            action="store_true", help='Record vsim Wlf Waveform file')
+                        
+        parser.add_argument("--vsim-enablecov", dest="vsim_enablecov",
+                            action="store_true", help='Enable vsim coverage analysis')
+                        
         parser.add_argument("--boot-from-flash", dest="boot_from_flash",
                             action="store_true", help='boot from flash')
+
+        parser.add_argument("--vsim-dofile", dest="vsim_dofile", default=None, help="Specify vsim do file")
+
+        parser.add_argument("--vsim-model", dest="vsim_model", default="sverilog", help="Specify platform model used")
                         
         [args, otherArgs] = parser.parse_known_args()
 
@@ -57,6 +66,18 @@ class Runner(Platform):
         # Overwrite JSON configuration with specific options
         if args.gui:
             js_config.get('**/vsim').set('gui', True)
+
+        if args.vsim_recordwlf:
+            js_config.get('**/vsim').set('recordwlf', True)
+
+        if args.vsim_enablecov:
+            js_config.get('**/vsim').set('enablecov', True)
+
+        if args.vsim_dofile is not None:
+            js_config.get('**/vsim').set('dofile', args.vsim_dofile)
+
+        js_config.get('**/vsim').set('vsim_model', args.vsim_model)
+
 
         binary = self.config.getOption('binary')
         if binary is not None:

@@ -213,10 +213,10 @@ class Runner(runner.Runner):
             if gui:
                 self.set_env('VOPT_ACC_ENA', 'YES')
 
-            if recordwlf:
+            if recordwlf is True:
                 self.set_env('RECORD_WLF', 'YES')
             
-            if vsimdofile:
+            if vsimdofile is not None:
                 self.set_env('RECORD_WLF', 'YES')
                 tcl_args.append('-do %s/waves/%s' % (self.__get_rtl_path(), vsimdofile))
 

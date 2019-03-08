@@ -44,5 +44,9 @@ class Runner(Platform):
 
     def __new__(cls, config, tree):
 
+        simulator = config.getOption('simulator')
+        if simulator is not None:
+            tree.get('**/runner').set('simulator', simulator)
+
         runner = get_runner(tree.get('**/pulp_chip_family').get(), tree)
         return runner(config, tree)
