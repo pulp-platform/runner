@@ -115,6 +115,9 @@ class Runner(runner.Runner):
             vsim_args = self.get_json().get('**/vsim/args').get_dict()
             gui = self.get_json().get_child_str('**/vsim/gui')
 
+            for param, key in self.get_params().items():
+                tcl_args.append('+%s=%s' % (param, key))
+
             recordwlf = self.get_json().get_child_str('**/vsim/recordwlf')
             vsimdofile = self.get_json().get_child_str('**/vsim/dofile')
             enablecov = self.get_json().get_child_str('**/vsim/enablecov')

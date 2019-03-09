@@ -95,6 +95,9 @@ class Runner(Platform):
     def set_param(self, name, value):
         self.params[name] = value
 
+    def get_params(self):
+        return self.params
+
     def power(self):
         os.environ['POWER_VCD_FILE'] = os.path.join(os.getcwd(), 'cluster_domain.vcd.gz')
         os.environ['POWER_ANALYSIS_PATH'] = os.path.join(os.environ.get('PULP_SRC_PATH'), 'gf22fdx', 'power_analysis')
