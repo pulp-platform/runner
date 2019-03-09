@@ -282,25 +282,50 @@ class Efuse(object):
 
             efuses.append('0:%s' % load_mode_hex)
     
-        if info3 != 0:
-          efuses.append('37:%s' % (info3))
-        
-        if info6 != 0:
-          efuses.append('40:%s' % (info6))
+        efuses.append('1:%s' % 0)
+        efuses.append('37:%s' % (info3))
+        efuses.append('38:%s' % 0)
+        efuses.append('39:%s' % 0)        
+        efuses.append('40:%s' % (info6))
         
 
     # Efuse preloading file generation
-    values = [0] * nb_regs * 8
-    for efuse in efuses:
-        efuseId, value = efuse.split(':')
-        self.dump('  Writing register (index: %d, value: 0x%x)' % (int(efuseId, 0), int(value, 0)))
-        efuseId = int(efuseId, 0)
-        value = int(value, 0)
-        for index in range(0, 8):
-            if (value >> index) & 1 == 1: values[efuseId + index*128] = 1
+    if pulp_chip == 'vega':
 
-    self.dump('  Generating to file: ' + filename)
+      efuse_values = []
+      index = 0
 
-    with open(filename, 'w') as file:
-        for value in values:
-            file.write('%d ' % (value))
+      for efuse in efuses:
+          efuseId, value = efuse.split(':')
+          self.dump('  Writing register (index: %d, value: 0x%x)' % (int(efuseId, 0), int(value, 0)))
+          efuseId = int(efuseId, 0)
+          value = int(value, 0)
+
+          for i in range(index, efuseId):
+            efuse_values.append(0)
+
+          efuse_values.append(value)
+
+      self.dump('  Generating to file: ' + filename)
+
+      with open(filename, 'w') as file:
+          for value in efuse_values:
+              file.write('{0:08b}\n'.format(value))
+
+
+    else:
+
+      values = [0] * nb_regs * 8
+      for efuse in efuses:
+          efuseId, value = efuse.split(':')
+          self.dump('  Writing register (index: %d, value: 0x%x)' % (int(efuseId, 0), int(value, 0)))
+          efuseId = int(efuseId, 0)
+          value = int(value, 0)
+          for index in range(0, 8):
+              if (value >> index) & 1 == 1: values[efuseId + index*128] = 1
+
+      self.dump('  Generating to file: ' + filename)
+
+      with open(filename, 'w') as file:
+          for value in values:
+              file.write('%d ' % (value))
