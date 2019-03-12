@@ -127,33 +127,33 @@ class Runner(runner.Runner):
                 if os.environ.get('USE_PGPIN_NETLIST'):
                     if gui:
                         vsim_args.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_rtl_path())
-                        vsim_args.append("-do 'source %s/tcl_files/go_5_dec.tcl'" % (self.__get_rtl_path()))
-                        vsim_args.append("-do 'source %s/tcl_files/%s; set_osi_pgpin_netlist_tcheck;'" % (self.__get_rtl_path(), vsim_script))
+                        vsim_args.append("-do 'source %s/tcl_files/disable_tcheck_fll.do'" % (self.__get_rtl_path()))                    
+                        vsim_args.append("-do 'source %s/tcl_files/%s; set_tcheck;'" % (self.__get_rtl_path(), vsim_script))
                     else:
                         vsim_args.append("-c")
                         vsim_args.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_rtl_path())
-                        vsim_args.append("-do 'source %s/tcl_files/go_5_dec.tcl'" % (self.__get_rtl_path()))
-                        vsim_args.append("-do 'source %s/tcl_files/%s'" % (self.__get_rtl_path(), vsim_script))
-                        vsim_args.append("-do 'source %s/tcl_files/exec_pgpin.tcl'" % (self.__get_rtl_path()))
+                        vsim_args.append("-do 'source %s/tcl_files/disable_tcheck_fll.do'" % (self.__get_rtl_path()))                    
+                        vsim_args.append("-do 'source %s/tcl_files/%s; set_tcheck; run_and_exit;'" % (self.__get_rtl_path(), vsim_script))
                 else:
                     if gui:
                         vsim_args.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_rtl_path())
-                        vsim_args.append("-do 'source %s/tcl_files/go_5_dec.tcl'" % (self.__get_rtl_path()))
-                        vsim_args.append("-do 'source %s/tcl_files/%s; set_osi_netlist_tcheck;'" % (self.__get_rtl_path(), vsim_script))
+                        vsim_args.append("-do 'source %s/tcl_files/disable_tcheck_fll.do'" % (self.__get_rtl_path()))                    
+                        vsim_args.append("-do 'source %s/tcl_files/%s; set_tcheck;'" % (self.__get_rtl_path(), vsim_script))
                     else:
                         vsim_args.append("-c")
                         vsim_args.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_rtl_path())
-                        vsim_args.append("-do 'source %s/tcl_files/go_5_dec.tcl'" % (self.__get_rtl_path()))
-                        vsim_args.append("-do 'source %s/tcl_files/%s'" % (self.__get_rtl_path(), vsim_script))
-                        vsim_args.append("-do 'source %s/tcl_files/exec.tcl'" % (self.__get_rtl_path()))
+                        vsim_args.append("-do 'source %s/tcl_files/disable_tcheck_fll.do'" % (self.__get_rtl_path()))                    
+                        vsim_args.append("-do 'source %s/tcl_files/%s; set_tcheck; run_and_exit;'" % (self.__get_rtl_path(), vsim_script))
             else:
                 if gui:
                     vsim_args.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_rtl_path())
-                    vsim_args.append("-do 'source %s/tcl_files/%s'" % (self.__get_rtl_path(), vsim_script))
+                    vsim_args.append("-do 'source %s/tcl_files/disable_tcheck_fll.do'" % (self.__get_rtl_path()))                    
+                    vsim_args.append("-do 'source %s/tcl_files/%s; set_tcheck;'" % (self.__get_rtl_path(), vsim_script))
                 else:
                     vsim_args.append("-c")
                     vsim_args.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_rtl_path())
-                    vsim_args.append("-do 'source %s/tcl_files/%s; run_and_exit;'" % (self.__get_rtl_path(), vsim_script))
+                    vsim_args.append("-do 'source %s/tcl_files/disable_tcheck_fll.do'" % (self.__get_rtl_path()))                    
+                    vsim_args.append("-do 'source %s/tcl_files/%s; set_tcheck; run_and_exit;'" % (self.__get_rtl_path(), vsim_script))
 
             if not self.get_json().get('**/runner/boot_from_flash').get():
                 tcl_args.append('-gLOAD_L2=JTAG')
