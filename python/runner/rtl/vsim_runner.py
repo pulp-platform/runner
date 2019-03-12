@@ -98,7 +98,7 @@ class Runner(runner.Runner):
             self.__create_symlink(self.rtl_path, 'tcl_files')
             self.__create_symlink(self.rtl_path, 'waves')
             self.__create_symlink(self.rtl_path, 'models')
-            self.__create_symlink(self.rtl_path, 'FLL_digital.sdf.gz')
+            self.__create_symlink(self.rtl_path, 'ips_inputs')
 
         return self.rtl_path
 
