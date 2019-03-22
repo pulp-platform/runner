@@ -210,7 +210,6 @@ class Efuse(object):
       xtal_check_min = self.config.get_child_bool('**/efuse/xtal_check_min')
       xtal_check_max = self.config.get_child_bool('**/efuse/xtal_check_max')
 
-
       # In case we boot with the classic rom mode, don't init any efuse, the boot loader will boot with the default mode
       load_mode_hex = None
 
@@ -304,7 +303,12 @@ class Efuse(object):
           for i in range(index, efuseId):
             efuse_values.append(0)
 
+          index = efuseId + 1
+
           efuse_values.append(value)
+
+      for i in range(index, 128):
+        efuse_values.append(0)
 
       self.dump('  Generating to file: ' + filename)
 

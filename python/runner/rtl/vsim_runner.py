@@ -177,7 +177,6 @@ class Runner(runner.Runner):
                     tcl_args.append('+VSIM_BOOTTYPE_CFG=TB_BOOT_FROM_HYPER_FLASH')
 
                 if self.get_json().get_child_str('**/chip/name') == 'vega':
-                    tcl_args.append('-gLOAD_L2=HYPER_DEV')
                     tcl_args.append('+VSIM_BOOTTYPE_CFG=TB_BOOT_FROM_HYPER_FLASH')
 
               if self.get_json().get_child_str('**/chip/name') == 'wolfe':
