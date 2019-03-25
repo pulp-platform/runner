@@ -6,7 +6,7 @@ import os
 import os.path
 import time
 import plptree
-import plp_flash_stimuli
+import runner.plp_flash_stimuli as plp_flash_stimuli
 
 def execCmd(cmd):
     print ('Executing command: ' + cmd)

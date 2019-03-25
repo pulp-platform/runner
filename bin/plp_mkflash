@@ -5,7 +5,7 @@ import os
 from os import listdir
 from os.path import isfile, join, isdir
 import struct
-import plp_flash_stimuli
+import runner.plp_flash_stimuli as plp_flash_stimuli
 
 class bcolors:
     HEADER = '\033[95m'
