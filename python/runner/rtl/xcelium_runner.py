@@ -19,7 +19,7 @@
 #
 
 from plp_platform import *
-import plp_flash_stimuli
+import runner.plp_flash_stimuli as plp_flash_stimuli
 import time
 import sys
 import subprocess
