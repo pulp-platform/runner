@@ -23,12 +23,12 @@ from plp_platform import *
 import runner.plp_flash_stimuli as plp_flash_stimuli
 import time
 import sys
+import os
 import subprocess
 import shlex
 import io
 import runner.stim_utils
-from shutil import copyfile
-
+import shutil
 
 # This class is the default runner for all chips but can be overloaded
 # for specific chips in order to change a bit the behavior.
@@ -272,6 +272,19 @@ class Runner(Platform):
 
         os.symlink(os.path.join(rtl_path, name), name)
 
+
+    def __copy_link(self, rtl_path, name):
+        if os.path.isdir(name):
+            shutil.rmtree(name)
+        elif os.path.exists(name):
+            os.remove(name)
+
+        if os.path.isdir(os.path.join(rtl_path, name)):
+            # print ('isdir %s' % name)
+            shutil.copytree(os.path.join(rtl_path, name), name)
+        else:
+            # print ('isfile %s' % name)
+            shutil.copy2(os.path.join(rtl_path, name), name)        
 
 
     def set_env(self, key, value):
