@@ -92,13 +92,13 @@ class Runner(runner.Runner):
             # os.environ['PULP_PATH'] = self.rtl_path
             # os.environ['TB_PATH']   = self.rtl_path
 
-            self.__copy_link(self.rtl_path, 'boot')
-            self.__copy_link(self.rtl_path, 'ips_inputs')
-            self.__copy_link(self.rtl_path, 'models')
-            self.__copy_link(self.rtl_path, 'modelsim.ini')
+            self.__create_symlink(self.rtl_path, 'boot')
+            self.__create_symlink(self.rtl_path, 'ips_inputs')
+            self.__create_symlink(self.rtl_path, 'models')
+            self.__create_symlink(self.rtl_path, 'modelsim.ini')
             self.__copy_link(self.rtl_path, 'modelsim_libs')
-            self.__copy_link(self.rtl_path, 'tcl_files')
-            self.__copy_link(self.rtl_path, 'waves')
+            self.__create_symlink(self.rtl_path, 'tcl_files')
+            self.__create_symlink(self.rtl_path, 'waves')
             self.__copy_link(self.rtl_path, 'work')
 
         return self.rtl_path

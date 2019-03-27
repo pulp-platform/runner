@@ -261,7 +261,14 @@ class Runner(Platform):
                 print ('Simulator reported an error, leaving')
                 return -1
 
-        
+            self.__remove_link('boot')
+            self.__remove_link('ips_inputs')
+            self.__remove_link('models')
+            self.__remove_link('modelsim.ini')
+            self.__remove_link('modelsim_libs')
+            self.__remove_link('tcl_files')
+            # self.__remove_link('waves')
+            self.__remove_link('work')
 
         return 0
 
@@ -286,6 +293,11 @@ class Runner(Platform):
             # print ('isfile %s' % name)
             shutil.copy2(os.path.join(rtl_path, name), name)        
 
+    def __remove_link(self, name):
+        if os.path.isdir(name):
+            shutil.rmtree(name)
+        elif os.path.exists(name):
+            os.remove(name)
 
     def set_env(self, key, value):
         self.env[key] = value
