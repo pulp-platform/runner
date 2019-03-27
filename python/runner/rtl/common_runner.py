@@ -294,7 +294,9 @@ class Runner(Platform):
             shutil.copy2(os.path.join(rtl_path, name), name)        
 
     def __remove_link(self, name):
-        if os.path.isdir(name):
+        if os.path.islink(name):
+            os.remove(name)        
+        elif os.path.isdir(name):
             shutil.rmtree(name)
         elif os.path.exists(name):
             os.remove(name)
