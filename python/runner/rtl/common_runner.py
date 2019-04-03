@@ -143,8 +143,6 @@ class Runner(Platform):
 
         if self.get_json().get('**/runner/boot_from_flash').get() or self.get_json().get_child_str('**/pulp_chip_family').find('vivosoc3') != -1:
 
-            print("bugu")
-
             # Boot from flash, we need to generate the flash image
             # containing the application binary.
             # This will generate SLM files used by the RTL platform
