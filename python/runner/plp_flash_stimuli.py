@@ -68,15 +68,33 @@ class Binary(object):
 
 class FlashImage(object):
 
-    def __init__(self, raw=None, stimuli=None, verbose=True, archi=None, encrypt=False, aesKey=None, aesIv=None, flashType='spi', qpi=True):
+    def __init__(self, raw=None, sysDescr=None, binDescr=None, stimuli=None, verbose=True, archi=None, encrypt=False, aesKey=None, aesIv=None, flashType='spi', qpi=True):
 
         self.bootBinary = None
         self.raw = raw
         self.stimuli = stimuli
         self.compList = []
         self.buff = []
+        self.buffSect = []
+
+        self.sysDescr = sysDescr
+        self.buffSysDescr = []
+        self.sysNumChips = 2
+        self.sysChipID = [0x54523230, 0x56533331]
+        self.sysMaxBins = 6
+        self.sysNumBins = [2,2]
+        self.sysBinPtrs = [[0 for x in range(self.sysNumChips)] for y in range(max(self.sysNumBins))]
+        self.sysBinPtrs[0] = [0xA0000, 0xC0000]
+        self.sysBinPtrs[1] = [0x20000, 0x40000]
+
+        self.buffBinDescr = []
+        self.binDescr = binDescr
+        self.binFlashAddr = 0x120000
+        self.binMaxSect = 16
+
         self.flashOffset = 0
         if flashType == 'hyper': self.blockSize = 1024
+        elif flashType == 'nand': self.blockSize = 2048
         else: self.blockSize = 4096
         self.bootaddr = 0x1c000000
         self.verbose = verbose
@@ -175,6 +193,24 @@ class FlashImage(object):
         if pad:
             self.__padBlock(len(buffer))
 
+
+    def __appendSection(self, buffer, encrypt=False):
+        if len(buffer) % self.blockSize == 0:
+            nbPages = len(buffer) / self.blockSize
+        else:
+            nbPages = len(buffer) // self.blockSize + 1
+
+        if self.verbose: print ("Section dump: length: 0x%x, nbPages: %d" % (len(buffer),nbPages))
+
+        for i in range(nbPages):
+            if i == (nbPages-1):
+                #print ("Section partial: length: 0x%x" % (len(buffer)%self.blockSize))
+                self.buffSect += buffer[i*self.blockSize:i*self.blockSize+(len(buffer)%self.blockSize)]
+                #print ("Section pad: length: 0x%x" % (self.blockSize-(len(buffer)%self.blockSize)))
+                for j in range(self.blockSize-(len(buffer)%self.blockSize)):
+                    self.buffSect.append(0)
+            else:
+                self.buffSect += buffer[i*self.blockSize:(i+1)*self.blockSize]
 
 
     def __dumpToBuff(self):
@@ -294,6 +330,71 @@ class FlashImage(object):
 
         self.__pad(self.fsOffset - self.flashOffset)
 
+
+    def __dumpSections(self):
+        if self.verbose:
+            print ("Generating section binary")
+            print ("  Number of sections: %d" % len(self.bootBinary.segments))
+
+        for area in self.bootBinary.segments:
+            self.__appendSection(area.data, encrypt=self.encrypt)
+
+    def __createSysDescr(self):
+        if self.verbose:
+            print ("Generating system descriptor")
+            print ("  Number of chips: %d" % self.sysNumChips)
+
+        self.buffSysDescr += struct.pack("I",self.sysNumChips)
+        for i in range(12): self.buffSysDescr.append(0)
+        for chipIdx in range(self.sysNumChips):
+            self.buffSysDescr += struct.pack("I",self.sysChipID[chipIdx])
+            self.buffSysDescr += struct.pack("I",self.sysNumBins[chipIdx])
+            for binPtr in range(self.sysNumBins[chipIdx]):
+                self.buffSysDescr += struct.pack("I",self.sysBinPtrs[chipIdx][binPtr])
+            for i in range(4*(self.sysMaxBins-self.sysNumBins[chipIdx])):
+                self.buffSysDescr.append(0)
+        # pad to full page
+        for i in range(self.blockSize-len(self.buffSysDescr)):
+            self.buffSysDescr.append(0)
+
+
+    def __createBinDescr(self):
+        if self.verbose:
+            print ("Generating binary descriptor")
+            print ("  Number of sections: %d" % len(self.bootBinary.segments))
+
+        if len(self.bootBinary.segments) > self.binMaxSect:
+            raise Exception('Too many (%d) sections in binary, currently only max. %d supported.' % (len(self.bootBinary.segments), self.binMaxSect)) 
+
+        tempBuff = []
+        tempBuff += struct.pack("I",len(self.bootBinary.segments))
+        tempBuff += struct.pack("I",self.bootBinary.entry)
+        tempBuff += struct.pack("I",self.bootaddr)
+
+        flashAddr = self.binFlashAddr
+        index = 0
+        for segment in self.bootBinary.segments:
+            segment.nbBlocks = int((segment.size + self.blockSize - 1) / self.blockSize) # TODO this looks like a creative ceil function, check
+            # actual print of section info
+            tempBuff += struct.pack("I",flashAddr)
+            tempBuff += struct.pack("I",segment.base)
+            tempBuff += struct.pack("I",segment.size)
+            tempBuff += struct.pack("I",segment.nbBlocks)
+
+            if self.verbose: print ("  Section %d: flash addr: 0x%x, chip address: 0x%x, size: 0x%x, nbBlocks: %d" % (index, flashAddr, segment.base, segment.size, segment.nbBlocks))
+            flashAddr += segment.nbBlocks * self.blockSize
+            index += 1
+
+        checksum = 0
+        for value in tempBuff: checksum += bin(value).count("1")
+
+        self.buffBinDescr += struct.pack("I",checksum)
+        self.buffBinDescr += tempBuff
+        # pad to full page
+        for i in range(self.blockSize-len(self.buffBinDescr)):
+            self.buffBinDescr.append(0)
+
+
     def __dumpBootBinaryToBuff(self):
         if self.bootBinary != None:
 
@@ -367,16 +468,38 @@ class FlashImage(object):
 
     def generate(self):
 
-        self.__dumpToBuff()
 
+        if self.flashType != 'nand':
+            self.__dumpToBuff()
+
+        # raw binary, aligned to flash page boundaries
         if self.raw != None:
             try:
                 os.makedirs(os.path.dirname(self.raw))
             except:
                 pass
 
-            with open(self.raw, 'wb') as file:
-                file.write(bytes(self.buff))
+            if self.archi == 'vivosoc3' or self.archi == 'vivosoc3_1':
+                self.__dumpSections()
+                with open(self.raw, 'wb') as file:
+                    file.write(bytes(self.buffSect))
+            else:
+                with open(self.raw, 'wb') as file:
+                    file.write(bytes(self.buff))
+
+        if self.archi == 'vivosoc3' or self.archi == 'vivosoc3_1':
+            # system descriptor
+            if self.sysDescr != None:
+                self.__createSysDescr()
+                with open(self.sysDescr, 'wb') as file:
+                    file.write(bytes(self.buffSysDescr))
+
+            # binary descriptor
+            if self.binDescr != None:
+                self.__createBinDescr()
+                with open(self.binDescr, 'wb') as file:
+                    file.write(bytes(self.buffBinDescr))
+
 
         if self.stimuli != None:
 
@@ -401,14 +524,28 @@ class FlashImage(object):
                         dumpByteToSlm(file, i+1, self.buff[i+2])
                         dumpByteToSlm(file, i+2, self.buff[i+1])
                         dumpByteToSlm(file, i+3, self.buff[i+0])
+                elif self.flashType == 'nand':
+                    nand_model_stretch_fact = 4
+
+                    for i in range(0, len(self.buffSysDescr)):
+                        dumpByteToSlm(file, i, self.buffSysDescr[i])
+
+                    for i in range(0, len(self.buffBinDescr)):
+                        dumpByteToSlm(file, i+nand_model_stretch_fact*self.sysBinPtrs[1][1], self.buffBinDescr[i])
+
+                    
+                    nbPages = len(self.buffSect) // self.blockSize
+                    for j in range(0, nbPages):
+                        for i in range(0, self.blockSize):
+                            dumpByteToSlm(file, nand_model_stretch_fact*self.binFlashAddr + nand_model_stretch_fact*j*self.blockSize + i, self.buffSect[j*self.blockSize + i])
                 else:
                     for i in range(0, len(self.buff)):
                         dumpByteToSlm(file, i, self.buff[i])
 
 
-def genFlashImage(slmStim=None, raw_stim=None, bootBinary=None, comps=[], verbose=False, archi=None, encrypt=False, aesKey=None, aesIv=None, flashType='spi', qpi=True):
+def genFlashImage(slmStim=None, rawStim=None, sysDescr=None, binDescr=None, bootBinary=None, comps=[], verbose=False, archi=None, encrypt=False, aesKey=None, aesIv=None, flashType='spi', qpi=True):
     if bootBinary != None or len(comps) != 0:
-        if slmStim != None or raw_stim is not None:
+        if slmStim != None or rawStim is not None:
             compsList = ''
             romBoot = ''
 
@@ -422,6 +559,11 @@ def genFlashImage(slmStim=None, raw_stim=None, bootBinary=None, comps=[], verbos
                 cmd = "plp_mkflash %s %s --stimuli=%s --flash-type=%s" % (romBoot, compsList, slmStim, flashType)
             else:
                 cmd = "plp_mkflash %s %s --raw=%s --flash-type=%s" % (romBoot, compsList, raw_stim, flashType)
+
+            # VivoSoC 3+ flash structure related stuff
+            if rawStim   != None: cmd += ' --raw=%s'      % rawStim
+            if sysDescr  != None: cmd += ' --sysDescr=%s' % sysDescr
+            if binDescr  != None: cmd += ' --binDescr=%s' % binDescr
 
             if qpi: cmd+= ' --qpi'
 

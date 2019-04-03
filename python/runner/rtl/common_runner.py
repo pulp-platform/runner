@@ -141,7 +141,9 @@ class Runner(Platform):
 
         self.__check_env()
 
-        if self.get_json().get('**/runner/boot_from_flash').get():
+        if self.get_json().get('**/runner/boot_from_flash').get() or self.get_json().get_child_str('**/pulp_chip_family').find('vivosoc3') != -1:
+
+            print("bugu")
 
             # Boot from flash, we need to generate the flash image
             # containing the application binary.
@@ -160,6 +162,9 @@ class Runner(Platform):
 
             if plp_flash_stimuli.genFlashImage(
                 slmStim=self.get_json().get('**/runner/flash_slm_file').get(),
+                rawStim=self.get_json().get('**/runner/flash_raw_file').get(),
+                binDescr=self.get_json().get('**/runner/flash_binDescr_file').get(),
+                sysDescr=self.get_json().get('**/runner/flash_sysDescr_file').get(),
                 bootBinary=self.get_json().get('**/runner/binaries').get_elem(0).get(),
                 comps=comps,
                 verbose=self.get_json().get('**/runner/verbose').get(),
@@ -168,7 +173,7 @@ class Runner(Platform):
                 encrypt=encrypted, aesKey=aes_key, aesIv=aes_iv):
                 return -1
 
-        else:
+        if not self.get_json().get('**/runner/boot_from_flash').get():
 
             stim = runner.stim_utils.stim(verbose=self.get_json().get('**/runner/verbose').get())
 
