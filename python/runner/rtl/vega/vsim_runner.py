@@ -32,4 +32,4 @@ class Runner(runner.Runner):
         # it should stop and the external loader take over the boot through JTAG
         boot = self.get_json().get_child_str('**/runner/boot-mode')
         if boot.find('_dev') != -1:
-            self.set_param('VSIM_BOOTMODE_CFG', 'TB_BOOT_MODE_0')
+            self.set_param('VSIM_BOOTMODE_CFG', 'TB_BOOT_MODE_1')
