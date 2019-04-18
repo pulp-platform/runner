@@ -128,6 +128,15 @@ class FlashImage(object):
             buff += struct.pack("I", value)
             return buff
 
+    def __appendLongInt(self, value, newBlock=False, buff=None):
+        if buff is None:
+            #if newBlock: self.__roundToNextBlock()
+            self.buff += struct.pack("Q", value)
+            self.flashOffset += 8
+        else:
+            buff += struct.pack("Q", value)
+            return buff
+
     def __appendByte(self, value, newBlock=False, buff=None):
         if buff is None:
             #if newBlock: self.__roundToNextBlock()
@@ -265,7 +274,9 @@ class FlashImage(object):
             index += 1
 
 
+
         # Then write the header containing memory areas declaration
+        flashOffset = (flashOffset + 7) & ~7
         self.fsOffset = flashOffset
 
         header_buff = bytes([])
@@ -304,7 +315,7 @@ class FlashImage(object):
 
         else:
             # In case no boot binary is there, we must have at least the first word telling where starts the next descriptor
-            self.__appendInt(4)
+            self.__appendLongInt(8)
 
 
     def __dumpCompsToBuff(self):
@@ -319,7 +330,7 @@ class FlashImage(object):
         headerSize = 0
         
         # Compute the header size
-        headerSize += 8    # Header size and number of components
+        headerSize += 12    # Header size and number of components
         
         for comp in self.compList:
             headerSize += 12                # Flash address, size and path length
@@ -338,7 +349,7 @@ class FlashImage(object):
         # Now create the raw image as a byte array
         
         # First header size
-        self.__appendInt(headerSize)
+        self.__appendLongInt(headerSize)
         
         # Number of components
         self.__appendInt(len(self.compList))
