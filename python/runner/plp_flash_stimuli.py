@@ -23,6 +23,12 @@ def dumpByteToSlm(file, addr, value):
 def dumpShortToSlm(file, addr, value):
     file.write("@%08X %04X\n" % (addr, value))
 
+def dumpWordToSlm(file, addr, value):
+    file.write("@%08X %08X\n" % (addr, value))
+
+def dumpLongToSlm(file, addr, value):
+    file.write("@%08X %016X\n" % (addr, value))
+
 def dump_word( filetoprint, addr, data_s):
     for i in xrange(0,4,1):
         filetoprint.write("@%08X %s\n" % ( addr+i,  data_s[i*2:(i+1)*2] ))
@@ -397,7 +403,14 @@ class FlashImage(object):
                 pass
 
             with open(self.stimuli, 'w') as file:
-                if self.flashType == 'hyper':
+                if self.flashType == 'mram':
+                    last_bytes = len(self.buff) & 0x7
+                    for i in range(0, 8 - last_bytes):
+                        self.__appendByte(0)
+                    for i in range(0, len(self.buff)>>3):
+                        value = (self.buff[i*8+7] << 56) + (self.buff[i*8+6] << 48) + (self.buff[i*8+5] << 40) + (self.buff[i*8+4] << 32) + (self.buff[i*8+3] << 24) + (self.buff[i*8+2] << 16) + (self.buff[i*8+1] << 8) + self.buff[i*8]
+                        dumpLongToSlm(file, i, value)
+                elif self.flashType == 'hyper':
                     if len(self.buff) & 1 != 0:
                         self.__appendByte(0)
                     for i in range(0, len(self.buff)>>1):
