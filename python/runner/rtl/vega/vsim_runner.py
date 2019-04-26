@@ -33,3 +33,6 @@ class Runner(runner.Runner):
         boot = self.get_json().get_child_str('**/runner/boot-mode')
         if boot.find('_dev') != -1:
             self.set_param('VSIM_BOOTMODE_CFG', 'TB_BOOT_MODE_1')
+
+        if boot.find('_mram') != -1:
+            self.set_param('PRELOAD_MRAM', '1')

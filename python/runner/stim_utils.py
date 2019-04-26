@@ -251,6 +251,7 @@ class Efuse(object):
     
       elif pulp_chip == 'vega':
         efuses = [0] * 128
+        info2 = 0
         info3 = 0
         info6 = 0
         if load_mode == 'rom':
@@ -266,8 +267,9 @@ class Efuse(object):
           load_mode_hex = 2 | (2 << 3) | (0 << 4) | (0 << 5) | (0 << 6) | (0 << 7)
           # MRAM type
           info3 = (2 << 0)
-          # Activate MRAM TRIM CFG and fill it with dummy numbers until we get the real one
-          info6 |= (1 << 6)
+          # Activate MRAM TRIM CFG and fill it with dummy numbers until we get the real one. Also activate clock divider
+          info6 |= (1 << 6) | (1<<7)
+          info2 |= (2 << 3)
           efuses[56] = 32*4
           for i in range(0, 32):
             efuses [57+i] = i | ((i*4+1)<<8) | ((i*4+2)<<16) | ((i*4+3)<<24)
@@ -292,7 +294,7 @@ class Efuse(object):
 
             efuses[0] = load_mode_hex
     
-        efuses[1] = 0
+        efuses[1] = info2
         efuses[37] = info3
         efuses[38] = 0
         efuses[39] = 0     
