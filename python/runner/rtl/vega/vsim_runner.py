@@ -36,3 +36,4 @@ class Runner(runner.Runner):
 
         if boot.find('_mram') != -1:
             self.set_param('PRELOAD_MRAM', '1')
+            self.set_param('REF_LINE_INIT', '1')
