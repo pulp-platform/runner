@@ -249,7 +249,9 @@ class Efuse(object):
 
             efuses.append('0:%s' % load_mode_hex)
     
-      else:
+      elif pulp_chip == 'vega':
+        efuses = [0] * 128
+        info2 = 0
         info3 = 0
         info6 = 0
         if load_mode == 'rom':
@@ -260,61 +262,97 @@ class Efuse(object):
           load_mode_hex = 2 | (2 << 3) | (0 << 4) | (0 << 5) | (0 << 6) | (0 << 7)
           # Hyperflash type
           info3 = (1 << 0)
+        elif load_mode == 'rom_spim':
+          # RTL platform | flash boot | no encryption | no wait xtal
+          load_mode_hex = 2 | (2 << 3) | (0 << 4) | (0 << 5) | (0 << 6) | (0 << 7)
+          # SPI flash type
+          info3 = (0 << 0)
+        elif load_mode == 'rom_mram':
+          # RTL platform | flash boot | no encryption | no wait xtal
+          load_mode_hex = 2 | (2 << 3) | (0 << 4) | (0 << 5) | (0 << 6) | (0 << 7)
+          # MRAM type
+          info3 = (2 << 0)
+          # Activate MRAM TRIM CFG and fill it with dummy numbers until we get the real one. Also activate clock divider
+          info6 |= (1 << 6) | (1<<7)
+          info2 |= (2 << 3)
+          efuses[56] = 32*4
+          for i in range(0, 32):
+            efuses [57+i] = i | ((i*4+1)<<8) | ((i*4+2)<<16) | ((i*4+3)<<24)
         
         if xtal_check:
             if load_mode_hex == None: load_mode_hex = 0
             load_mode_hex |= 1<<7
             delta = int(xtal_check_delta*((1 << 15)-1))
-            efuses.append('26:0x%x' % (delta & 0xff))
-            efuses.append('27:0x%x' % ((delta >> 8) & 0xff))
-            efuses.append('28:0x%x' % (xtal_check_min))
-            efuses.append('29:0x%x' % (xtal_check_max))
+            efuses[26] = delta & 0xff
+            efuses[27] = (delta >> 8) & 0xff
+            efuses[28] = xtal_check_min
+            efuses[29] = xtal_check_max
 
         if load_mode_hex != None:
             if encrypted: 
                 load_mode_hex |= 0x40
                 info6 |= 1<<4
                 for i in range(0, 16):
-                    efuses.append('%d:0x%s' % (2+i, aes_key[30-i*2:32-i*2]))
+                    efuses[2+i] = aes_key[30-i*2:32-i*2]
                 for i in range(0, 8):
-                    efuses.append('%d:0x%s' % (18+i, aes_iv[14-i*2:16-i*2]))
+                    efuses[18+i] = aes_iv[14-i*2:16-i*2]
 
-            efuses.append('0:%s' % load_mode_hex)
+            efuses[0] = load_mode_hex
     
-        efuses.append('1:%s' % 0)
-        efuses.append('37:%s' % (info3))
-        efuses.append('38:%s' % 0)
-        efuses.append('39:%s' % 0)        
-        efuses.append('40:%s' % (info6))
-        
+        efuses[1] = info2
+        efuses[37] = info3
+        efuses[38] = 0
+        efuses[39] = 0     
+        efuses[40] = info6
+      else:
+          info3 = 0
+          info6 = 0
+          if load_mode == 'rom':
+            # RTL platform | flash boot | no encryption | no wait xtal
+            load_mode_hex = 2 | (2 << 3) | (0 << 4) | (0 << 5) | (0 << 6) | (0 << 7)
+          elif load_mode == 'rom_hyper':
+            # RTL platform | flash boot | no encryption | no wait xtal
+            load_mode_hex = 2 | (2 << 3) | (0 << 4) | (0 << 5) | (0 << 6) | (0 << 7)
+            # Hyperflash type
+            info3 = (1 << 0)
+          
+          if xtal_check:
+              if load_mode_hex == None: load_mode_hex = 0
+              load_mode_hex |= 1<<7
+              delta = int(xtal_check_delta*((1 << 15)-1))
+              efuses.append('26:0x%x' % (delta & 0xff))
+              efuses.append('27:0x%x' % ((delta >> 8) & 0xff))
+              efuses.append('28:0x%x' % (xtal_check_min))
+              efuses.append('29:0x%x' % (xtal_check_max))
+
+          if load_mode_hex != None:
+              if encrypted: 
+                  load_mode_hex |= 0x40
+                  info6 |= 1<<4
+                  for i in range(0, 16):
+                      efuses.append('%d:0x%s' % (2+i, aes_key[30-i*2:32-i*2]))
+                  for i in range(0, 8):
+                      efuses.append('%d:0x%s' % (18+i, aes_iv[14-i*2:16-i*2]))
+
+              efuses.append('0:%s' % load_mode_hex)
+      
+          efuses.append('1:%s' % 0)
+          efuses.append('37:%s' % (info3))
+          efuses.append('38:%s' % 0)
+          efuses.append('39:%s' % 0)        
+          efuses.append('40:%s' % (info6))
+                  
 
     # Efuse preloading file generation
     if pulp_chip == 'vega':
 
-      efuse_values = []
-      index = 0
-
-      for efuse in efuses:
-          efuseId, value = efuse.split(':')
-          self.dump('  Writing register (index: %d, value: 0x%x)' % (int(efuseId, 0), int(value, 0)))
-          efuseId = int(efuseId, 0)
-          value = int(value, 0)
-
-          for i in range(index, efuseId):
-            efuse_values.append(0)
-
-          index = efuseId + 1
-
-          efuse_values.append(value)
-
-      for i in range(index, 128):
-        efuse_values.append(0)
-
       self.dump('  Generating to file: ' + filename)
 
       with open(filename, 'w') as file:
-          for value in efuse_values:
-              file.write('{0:08b}\n'.format(value))
+        for efuseId in range (0, 128):
+            value = efuses[efuseId]
+            self.dump('  Writing register (index: %d, value: 0x%x)' % (efuseId, value))
+            file.write('{0:032b}\n'.format(value))
 
 
     else:
