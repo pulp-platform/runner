@@ -254,6 +254,12 @@ class Efuse(object):
         info2 = 0
         info3 = 0
         info6 = 0
+
+        clk_div = self.config.get_child_int('**/efuse/clkdiv')
+        fll_freq = self.config.get_child_int('**/efuse/fll/freq')
+        fll_assert_cycles = self.config.get_child_int('**/efuse/fll/assert_cycles')
+        fll_lock_tolerance = self.config.get_child_int('**/efuse/fll/lock_tolerance')
+
         if load_mode == 'rom':
           # RTL platform | flash boot | no encryption | no wait xtal
           load_mode_hex = 2 | (2 << 3) | (0 << 4) | (0 << 5) | (0 << 6) | (0 << 7)
@@ -279,14 +285,22 @@ class Efuse(object):
           for i in range(0, 32):
             efuses [57+i] = i | ((i*4+1)<<8) | ((i*4+2)<<16) | ((i*4+3)<<24)
         
-        if xtal_check:
-            if load_mode_hex == None: load_mode_hex = 0
-            load_mode_hex |= 1<<7
-            delta = int(xtal_check_delta*((1 << 15)-1))
-            efuses[26] = delta & 0xff
-            efuses[27] = (delta >> 8) & 0xff
-            efuses[28] = xtal_check_min
-            efuses[29] = xtal_check_max
+        if clk_div is not None:
+          info6 |= 1 << 7
+          info2 = (info2 & ~(3<<3)) | (clk_div << 3)
+
+
+        if fll_freq is not None:
+          info2 |= (1 << 0) | (1 << 2)
+          efuses[31] = fll_freq
+
+        if fll_lock_tolerance is not None or fll_assert_cycles is not None:
+          info2 |= (1<< 1)
+          efuses[32] = fll_lock_tolerance
+          efuses[33] = fll_assert_cycles
+
+
+
 
         if load_mode_hex != None:
             if encrypted: 
