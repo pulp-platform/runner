@@ -315,6 +315,11 @@ class Efuse(object):
             load_mode_hex = 2 | (2 << 3) | (0 << 4) | (0 << 5) | (0 << 6) | (0 << 7)
             # Hyperflash type
             info3 = (1 << 0)
+          elif load_mode == 'rom_spim':
+            # RTL platform | flash boot | no encryption | no wait xtal
+            load_mode_hex = 2 | (2 << 3) | (0 << 4) | (0 << 5) | (0 << 6) | (0 << 7)
+            # SPI flash type
+            info3 = (0 << 0)
           
           if xtal_check:
               if load_mode_hex == None: load_mode_hex = 0
