@@ -209,6 +209,7 @@ class Efuse(object):
       xtal_check_delta = self.config.get_child_bool('**/efuse/xtal_check_delta')
       xtal_check_min = self.config.get_child_bool('**/efuse/xtal_check_min')
       xtal_check_max = self.config.get_child_bool('**/efuse/xtal_check_max')
+      no_preload = self.config.get_child_str('**/efuse/no-preload')
 
       # In case we boot with the classic rom mode, don't init any efuse, the boot loader will boot with the default mode
       load_mode_hex = None
@@ -253,12 +254,16 @@ class Efuse(object):
         efuses = [0] * 128
         info2 = 0
         info3 = 0
+        info4 = 0
+        info5 = 0
         info6 = 0
 
         clk_div = self.config.get_child_int('**/efuse/clkdiv')
         fll_freq = self.config.get_child_int('**/efuse/fll/freq')
         fll_assert_cycles = self.config.get_child_int('**/efuse/fll/assert_cycles')
         fll_lock_tolerance = self.config.get_child_int('**/efuse/fll/lock_tolerance')
+        hyper_delay = self.config.get_child_int('**/efuse/hyper/delay')
+        hyper_latency = self.config.get_child_int('**/efuse/hyper/latency')
 
         if load_mode == 'rom':
           # RTL platform | flash boot | no encryption | no wait xtal
@@ -299,6 +304,13 @@ class Efuse(object):
           efuses[32] = fll_lock_tolerance
           efuses[33] = fll_assert_cycles
 
+        if hyper_delay is not None:
+          info5 |= (1<<6)
+          efuses[30] = hyper_delay
+
+        if hyper_latency is not None:
+          info5 |= (1<<7)
+          efuses[51] = hyper_latency
 
 
 
@@ -315,8 +327,8 @@ class Efuse(object):
     
         efuses[1] = info2
         efuses[37] = info3
-        efuses[38] = 0
-        efuses[39] = 0     
+        efuses[38] = info4
+        efuses[39] = info5 
         efuses[40] = info6
       else:
           info3 = 0
@@ -368,10 +380,11 @@ class Efuse(object):
       self.dump('  Generating to file: ' + filename)
 
       with open(filename, 'w') as file:
-        for efuseId in range (0, 128):
-            value = efuses[efuseId]
-            self.dump('  Writing register (index: %d, value: 0x%x)' % (efuseId, value))
-            file.write('{0:032b}\n'.format(value))
+        if no_preload is None or no_preload == False:
+          for efuseId in range (0, 128):
+              value = efuses[efuseId]
+              self.dump('  Writing register (index: %d, value: 0x%x)' % (efuseId, value))
+              file.write('{0:032b}\n'.format(value))
 
 
     else:
