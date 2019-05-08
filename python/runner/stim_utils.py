@@ -224,9 +224,9 @@ class Efuse(object):
           load_mode_hex = 0x12
         elif load_mode == 'rom_hyper':
           load_mode_hex = 0x2A
-        elif load_mode == 'rom_spim':
+        elif load_mode == 'rom_spim_single':
           load_mode_hex = 0x32
-        elif load_mode == 'rom_spim_qpi':
+        elif load_mode == 'rom_spim':
           load_mode_hex = 0x3A
         elif load_mode == 'jtag_dev' or load_mode == 'spi_dev':
           load_mode_hex = None
