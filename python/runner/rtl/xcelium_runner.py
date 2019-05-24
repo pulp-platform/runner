@@ -71,19 +71,23 @@ class Runner(runner.Runner):
             if not os.path.exists(self.rtl_path):
                 raise Exception("ERROR: %s=%s path does not exist" % (path_name, self.rtl_path))
 
-            os.environ['XCSIM_PATH'] = self.rtl_path
-            os.environ['PULP_PATH'] = self.rtl_path
-            os.environ['TB_PATH']   = self.rtl_path
-
+            os.environ['XCSIM_PATH'] = os.getcwd()
+            print ('Setting XCSIM_PATH in runner to %s' % os.environ.get('XCSIM_PATH'))
+            os.environ['VSIM_PATH'] = os.getcwd()
+            print ('Setting VSIM_PATH in runner to %s' % os.environ.get('VSIM_PATH'))
+            # os.environ['PULP_PATH'] = self.rtl_path
+            # os.environ['TB_PATH']   = self.rtl_path
 
             self.__create_symlink(self.rtl_path, 'boot')
+            self.__create_symlink(self.rtl_path, 'ips_inputs')
+            self.__create_symlink(self.rtl_path, 'models')
+            self.__create_symlink(self.rtl_path, 'tcl_files')
             self.__create_symlink(self.rtl_path, 'cds.lib')
             self.__create_symlink(self.rtl_path, 'hdl.var')
-            self.__create_symlink(self.rtl_path, 'tcl_files')
             self.__create_symlink(self.rtl_path, 'waves')
             self.__create_symlink(self.rtl_path, 'xcsim_libs')
             self.__create_symlink(self.rtl_path, 'min_access.txt')
-            self.__create_symlink(self.rtl_path, 'models')
+            # self.__copy_link(self.rtl_path, 'work')
 
         return self.rtl_path
 
@@ -91,8 +95,8 @@ class Runner(runner.Runner):
     def __get_sim_cmd(self):
 
 
-        simulator = self.get_json().get_child_str('**/runner/simulator')
-        if simulator == 'xcelium':
+        rtl_simulator = self.get_json().get_child_str('**/runner/rtl_simulator')
+        if rtl_simulator == 'xcelium':
             # vsim_script = self.get_json().get_child_str('**/vsim/script')
             # tcl_args = self.get_json().get('**/vsim/tcl_args').get_dict()
             # xmsim_args = self.get_json().get('**/vsim/args').get_dict()
@@ -152,6 +156,7 @@ class Runner(runner.Runner):
                                -disable_sem2009 \
                                -gateloopwarn \
                                -show_forces \
+                               -loadpli `ncroot`/tools/methodology/UVM/CDNS-1.1d/additions/sv/lib/64bit/libuvmpli.so \
                                -dpiheader %s/../tb/tb_driver/dpiheader.h' % (self.__get_rtl_path()))
 
                                # -always_trigger \
@@ -167,7 +172,9 @@ class Runner(runner.Runner):
                                -messages \
                                -xceligen on \
                                -assert_logging_error_off \
-                               +GAP_PATH=%s/../../' % (self.__get_rtl_path()))
+                               -sv_lib `ncroot`/tools/methodology/UVM/CDNS-1.1d/additions/sv/lib/64bit/libuvmdpi.so \
+                               -INPUT "@source `ncroot`/tools/methodology/UVM/CDNS-1.1d/additions/sv/files/tcl/uvm_sim.tcl" \
+                               +VSIM_PATH=%s' % (os.environ.get('XCSIM_PATH')))
             xmsim_args.append('-sv_lib %s/install/ws/lib/libpulpdpi' % (os.environ.get('PULP_SDK_HOME')))
            
             if gui:
@@ -191,4 +198,4 @@ class Runner(runner.Runner):
             return cmd
 
         else:
-            raise Exception('Unknown RTL simulator: ' + simulator)
+            raise Exception('Unknown RTL simulator: ' + rtl_simulator)

@@ -26,7 +26,7 @@ import imp
 
 
 def get_runner(chip, tree):
-    sim = tree.get_child_str('**/runner/simulator')
+    sim = tree.get_child_str('**/runner/rtl_simulator')
 
     runner_class = tree.get_str('**/vsim/%s_runner_class' % sim)
 
@@ -44,9 +44,9 @@ class Runner(Platform):
 
     def __new__(cls, config, tree):
 
-        simulator = config.getOption('simulator')
-        if simulator is not None:
-            tree.get('**/runner').set('simulator', simulator)
+        rtl_simulator = config.getOption('rtl_simulator')
+        if rtl_simulator is not None:
+            tree.get('**/runner').set('rtl_simulator', rtl_simulator)
 
         runner = get_runner(tree.get('**/pulp_chip_family').get(), tree)
         return runner(config, tree)

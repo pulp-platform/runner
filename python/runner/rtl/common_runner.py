@@ -44,7 +44,7 @@ class Runner(Platform):
         parser.add_argument("--gui", dest="gui",
                             action="store_true", help='Open the GUI')
                         
-        self.config.addOption("--simulator", dest="simulator", default=None, help='specify the rtl simulator to be used: Mentor vsim or Cadence xcelium')
+        self.config.addOption("--rtl_simulator", dest="rtl_simulator", default=None, help='specify the rtl simulator to be used: Mentor vsim or Cadence xcelium')
 
         parser.add_argument("--vsim-recordwlf", dest="vsim_recordwlf",
                             action="store_true", help='Record vsim Wlf Waveform file')
@@ -269,6 +269,10 @@ class Runner(Platform):
             self.__remove_link('tcl_files')
             # self.__remove_link('waves')
             self.__remove_link('work')
+            self.__remove_link('cds.lib')
+            self.__remove_link('hdl.var')
+            self.__remove_link('xcsim_libs')
+            self.__remove_link('min_access.txt')
 
         return 0
 

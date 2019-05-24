@@ -106,9 +106,9 @@ class Runner(runner.Runner):
     def __get_sim_cmd(self):
 
 
-        simulator = self.get_json().get_child_str('**/runner/rtl_simulator')
+        rtl_simulator = self.get_json().get_child_str('**/runner/rtl_simulator')
 
-        if simulator == 'vsim':
+        if rtl_simulator == 'vsim':
 
             vsim_script = self.get_json().get_child_str('**/vsim/script')
             tcl_args = self.get_json().get('**/vsim/tcl_args').get_dict()
@@ -250,4 +250,4 @@ class Runner(runner.Runner):
             return cmd
 
         else:
-            raise Exception('Unknown RTL simulator: ' + simulator)
+            raise Exception('Unknown RTL simulator: ' + rtl_simulator)
