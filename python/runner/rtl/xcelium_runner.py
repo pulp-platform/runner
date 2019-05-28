@@ -156,8 +156,10 @@ class Runner(runner.Runner):
                                -disable_sem2009 \
                                -gateloopwarn \
                                -show_forces \
-                               -loadpli `ncroot`/tools/methodology/UVM/CDNS-1.1d/additions/sv/lib/64bit/libuvmpli.so \
                                -dpiheader %s/../tb/tb_driver/dpiheader.h' % (self.__get_rtl_path()))
+
+                               # -loadpli `ncroot`/tools/methodology/UVM/CDNS-1.1d/additions/sv/lib/64bit/libuvmpli.so \
+
 
                                # -always_trigger \
                                # -default_delay_mode distributed \
@@ -172,10 +174,12 @@ class Runner(runner.Runner):
                                -messages \
                                -xceligen on \
                                -assert_logging_error_off \
-                               -sv_lib `ncroot`/tools/methodology/UVM/CDNS-1.1d/additions/sv/lib/64bit/libuvmdpi.so \
-                               -INPUT "@source `ncroot`/tools/methodology/UVM/CDNS-1.1d/additions/sv/files/tcl/uvm_sim.tcl" \
                                +VSIM_PATH=%s' % (os.environ.get('XCSIM_PATH')))
             xmsim_args.append('-sv_lib %s/install/ws/lib/libpulpdpi' % (os.environ.get('PULP_SDK_HOME')))
+
+                               # -sv_lib `ncroot`/tools/methodology/UVM/CDNS-1.1d/additions/sv/lib/64bit/libuvmdpi.so \
+                               # -INPUT "@source `ncroot`/tools/methodology/UVM/CDNS-1.1d/additions/sv/files/tcl/uvm_sim.tcl" \
+
            
             if gui:
                 xmelab_args.append('-access +rwc +fsmdebug \
