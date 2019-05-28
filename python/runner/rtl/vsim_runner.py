@@ -89,6 +89,9 @@ class Runner(runner.Runner):
 
             os.environ['VSIM_PATH'] = os.getcwd()
             print ('Setting VSIM_PATH in runner to %s' % os.environ.get('VSIM_PATH'))
+
+            os.environ['VSIM_SRC_PATH'] = vsim_path
+            print ('Setting VSIM_SRC_PATH in runner to %s' % os.environ.get('VSIM_SRC_PATH'))
             # os.environ['PULP_PATH'] = self.rtl_path
             # os.environ['TB_PATH']   = self.rtl_path
 
