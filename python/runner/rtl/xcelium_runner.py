@@ -44,7 +44,16 @@ class Runner(runner.Runner):
     def __init__(self, config, tree):
 
         super(Runner, self).__init__(config, tree)
-        
+
+        # All dev modes should set padsel pad to 1 so that boot code knows
+        # it should stop and the external loader take over the boot through JTAG
+        boot = self.get_json().get_child_str('**/runner/boot-mode')
+        if boot.find('_dev') != -1:
+            self.set_param('VSIM_BOOTMODE_CFG', 'TB_BOOT_MODE_1')
+
+        if boot.find('_mram') != -1:
+            self.set_param('PRELOAD_MRAM', '1')
+            self.set_param('REF_LINE_INIT', '1')        
 
     def __get_rtl_path(self):
 
@@ -107,15 +116,16 @@ class Runner(runner.Runner):
             # recordwlf = self.get_json().get_child_str('**/vsim/recordwlf')
             # vsimdofile = self.get_json().get_child_str('**/vsim/dofile')
             # enablecov = self.get_json().get_child_str('**/vsim/enablecov')
+            enableJtagTargetSync = self.get_json().get_child_str('**/vsim/enableJtagTargetSync')
             # vopt_args = self.get_json().get_child_str('**/vsim/vopt_args')
 
             if not self.get_json().get('**/runner/boot_from_flash').get():
                 xmelab_args.append('-defparam tb.tb_test_i.LOAD_L2=JTAG')
 
-            autorun = self.get_json().get('**/debug_bridge/autorun')
-            if self.get_json().get('**/runner/use_external_tb').get() or \
-              autorun is not None and autorun.get():
-                xmelab_args.append('-defparam tb.tb_test_i.ENABLE_EXTERNAL_DRIVER=1')
+            # autorun = self.get_json().get('**/debug_bridge/autorun')
+            # if self.get_json().get('**/runner/use_external_tb').get() or \
+            #   autorun is not None and autorun.get():
+            #     xmelab_args.append('-defparam tb.tb_test_i.ENABLE_EXTERNAL_DRIVER=1')
 
             if self.get_json().get('**/runner/boot_from_flash').get():
               if self.get_json().get('**/runner/flash_type').get() == 'spi':
@@ -123,14 +133,28 @@ class Runner(runner.Runner):
               elif self.get_json().get('**/runner/flash_type').get() == 'hyper':
                 xmelab_args.append('-defparam tb.tb_test_i.HYPER_FLASH_LOAD_MEM=1')
                 if self.get_json().get_child_str('**/chip/name') == 'vega':
-                    xmelab_args.append('-defparam tb.tb_test_i.LOAD_L2=HYPER_DEV')
+                    # xmelab_args.append('-defparam tb.tb_test_i.LOAD_L2=HYPER_DEV')
                     xmsim_args.append('+VSIM_BOOTTYPE_CFG=TB_BOOT_FROM_HYPER_FLASH')
 
-            if self.get_json().get('**/use_tb_comps').get():
-                xmelab_args.append('-defparam CONFIG_FILE=rtl_config.json')
+
+            # if os.environ.get('QUESTA_CXX') != None:
+            #     xmelab_args.append('-dpicpppath ' + os.environ.get('QUESTA_CXX'))
+
+            # if os.environ.get('PULP_SDK_HOME') is not None:
+            #     os.environ['PULP_SDK_DPI_ARGS'] = '-sv_lib %s/install/ws/lib/libpulpdpi' % (os.environ.get('PULP_SDK_HOME'))
+            # else:
+            #     os.environ['PULP_SDK_DPI_ARGS'] = '-sv_lib %s/lib/libpulpdpi' % (os.environ.get('INSTALL_DIR'))
+
+
+            # if self.get_json().get('**/use_tb_comps').get():
+            #     xmelab_args.append('-defparam CONFIG_FILE=rtl_config.json')
 
             if self.get_json().get('**/efuse') is not None:
                 xmsim_args.append('+preload_file=efuse_preload.data') #+debug=1  Add that to get debug messages from efuse
+
+            baudrate = self.get_json().get_child_int('**/uart/baudrate')
+            if baudrate is not None:
+                xmelab_args.append('-defparam tb.tb_test_i.BAUDRATE=%d' % baudrate)
 
             # if gui:
             #     self.set_env('VOPT_ACC_ENA', 'YES')
@@ -144,41 +168,48 @@ class Runner(runner.Runner):
 
             # if enablecov:
             #     self.set_env('VSIM_COV', 'YES')                
+
+            if enableJtagTargetSync:
+                xmelab_args.append('+ENABLE_JTAG_TARGET_SYNC=1')
+
             
             xmelab_args.append('-64bit \
                                -licqueue \
                                -timescale 1ns/1ps \
                                -mccodegen \
                                -perfstat \
-                               -update \
                                -nxmbind \
                                -nowarn STRINT:CUDEFB \
+                               -nowarn ENUMERR \
+                               -nowarn CUVWSP \
+                               -nowarn INTWID \
                                -disable_sem2009 \
                                -gateloopwarn \
                                -show_forces \
-                               -dpiheader %s/../tb/tb_driver/dpiheader.h' % (self.__get_rtl_path()))
+                               -always_trigger \
+                               -loadpli %s/tools/methodology/UVM/CDNS-1.1d/additions/sv/lib/64bit/libuvmpli.so:uvm_pli_boot \
+                               -dpiheader %s/../tb/tb_driver/dpiheader.h' % (os.environ.get('XCELIUM_ROOT'), self.__get_rtl_path()))
 
-                               # -loadpli `ncroot`/tools/methodology/UVM/CDNS-1.1d/additions/sv/lib/64bit/libuvmpli.so \
-
-
-                               # -always_trigger \
+                               # -atstar_selftrigger \
                                # -default_delay_mode distributed \
                                # -no_tchk_msg \
                                # -noassert \
 
 
-            xmsim_args.append('-64bit \
+            xmsim_args.append('"+UVM_TESTNAME=csi2_rx_pkt_raw8" "+UVM_VERBOSITY=UVM_LOW" "+phy_sel=dphy" "+lane=2lane" "+data_width=8bit" "+frame_mode=Gen" \
+                               -64bit \
                                -licqueue \
-                               -update \
                                -perfstat \
+                               -profile \
                                -messages \
                                -xceligen on \
                                -assert_logging_error_off \
                                +VSIM_PATH=%s' % (os.environ.get('XCSIM_PATH')))
             xmsim_args.append('-sv_lib %s/install/ws/lib/libpulpdpi' % (os.environ.get('PULP_SDK_HOME')))
+            xmsim_args.append('-sv_lib %s/tools/methodology/UVM/CDNS-1.1d/additions/sv/lib/64bit/libuvmdpi.so \
+                               -INPUT "@source %s/tools/methodology/UVM/CDNS-1.1d/additions/sv/files/tcl/uvm_sim.tcl"'
+                                % (os.environ.get('XCELIUM_ROOT'), os.environ.get('XCELIUM_ROOT')))
 
-                               # -sv_lib `ncroot`/tools/methodology/UVM/CDNS-1.1d/additions/sv/lib/64bit/libuvmdpi.so \
-                               # -INPUT "@source `ncroot`/tools/methodology/UVM/CDNS-1.1d/additions/sv/files/tcl/uvm_sim.tcl" \
 
            
             if gui:
