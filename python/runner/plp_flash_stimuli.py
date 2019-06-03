@@ -23,6 +23,12 @@ def dumpByteToSlm(file, addr, value):
 def dumpShortToSlm(file, addr, value):
     file.write("@%08X %04X\n" % (addr, value))
 
+def dumpWordToSlm(file, addr, value):
+    file.write("@%08X %08X\n" % (addr, value))
+
+def dumpLongToSlm(file, addr, value):
+    file.write("@%08X %016X\n" % (addr, value))
+
 def dump_word( filetoprint, addr, data_s):
     for i in xrange(0,4,1):
         filetoprint.write("@%08X %s\n" % ( addr+i,  data_s[i*2:(i+1)*2] ))
@@ -126,6 +132,15 @@ class FlashImage(object):
             self.flashOffset += 4
         else:
             buff += struct.pack("I", value)
+            return buff
+
+    def __appendLongInt(self, value, newBlock=False, buff=None):
+        if buff is None:
+            #if newBlock: self.__roundToNextBlock()
+            self.buff += struct.pack("Q", value)
+            self.flashOffset += 8
+        else:
+            buff += struct.pack("Q", value)
             return buff
 
     def __appendByte(self, value, newBlock=False, buff=None):
@@ -265,7 +280,9 @@ class FlashImage(object):
             index += 1
 
 
+
         # Then write the header containing memory areas declaration
+        flashOffset = (flashOffset + 7) & ~7
         self.fsOffset = flashOffset
 
         header_buff = bytes([])
@@ -304,7 +321,7 @@ class FlashImage(object):
 
         else:
             # In case no boot binary is there, we must have at least the first word telling where starts the next descriptor
-            self.__appendInt(4)
+            self.__appendLongInt(8)
 
 
     def __dumpCompsToBuff(self):
@@ -319,7 +336,7 @@ class FlashImage(object):
         headerSize = 0
         
         # Compute the header size
-        headerSize += 8    # Header size and number of components
+        headerSize += 12    # Header size and number of components
         
         for comp in self.compList:
             headerSize += 12                # Flash address, size and path length
@@ -338,7 +355,7 @@ class FlashImage(object):
         # Now create the raw image as a byte array
         
         # First header size
-        self.__appendInt(headerSize)
+        self.__appendLongInt(headerSize)
         
         # Number of components
         self.__appendInt(len(self.compList))
@@ -386,7 +403,14 @@ class FlashImage(object):
                 pass
 
             with open(self.stimuli, 'w') as file:
-                if self.flashType == 'hyper':
+                if self.flashType == 'mram':
+                    last_bytes = len(self.buff) & 0x7
+                    for i in range(0, 8 - last_bytes):
+                        self.__appendByte(0)
+                    for i in range(0, len(self.buff)>>3):
+                        value = (self.buff[i*8+7] << 56) + (self.buff[i*8+6] << 48) + (self.buff[i*8+5] << 40) + (self.buff[i*8+4] << 32) + (self.buff[i*8+3] << 24) + (self.buff[i*8+2] << 16) + (self.buff[i*8+1] << 8) + self.buff[i*8]
+                        dumpLongToSlm(file, i, value)
+                elif self.flashType == 'hyper':
                     if len(self.buff) & 1 != 0:
                         self.__appendByte(0)
                     for i in range(0, len(self.buff)>>1):

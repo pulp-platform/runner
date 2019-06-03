@@ -85,9 +85,11 @@ class Runner(Platform):
         return 0
 
     def flash(self):
-        if execCmd('plpbridge --cable=ftdi@digilent --chip=gap flash_erase_chip --flasher-init'):
+        chip_name = self.get_json().get_child_str('**/chip/name')
+
+        if execCmd('plpbridge --cable=ftdi@digilent --chip=%s flash_erase_chip --flasher-init' % chip_name):
             return -1
-        if execCmd('plpbridge --cable=ftdi@digilent --chip=gap flash_write --addr=0 --file=%s --flasher-init' % (self.get_flash_preload_file())):
+        if execCmd('plpbridge --cable=ftdi@digilent --chip=%s flash_write --addr=0 --file=%s --flasher-init' % (chip_name, self.get_flash_preload_file())):
             return -1
 
         return 0
@@ -118,11 +120,13 @@ class Runner(Platform):
             commands = " ".join(self.get_json().get_child_str(commands_name).split(','))
 
 
-            if self.get_json().get_child_str('**/chip/name') in ['gap']:
+            chip_name = self.get_json().get_child_str('**/chip/name')
+
+            if chip_name in ['gap', 'gap_rev1']:
                 if self.get_json().get_child_str('**/runner/boot-mode') == 'dev_hyper':
-                    return execCmd('plpbridge --cable=ftdi@digilent --boot-mode=jtag_hyper --chip=gap load')
+                    return execCmd('plpbridge --cable=ftdi@digilent --boot-mode=jtag_hyper --chip=%s load' % chip_name)
                 else:
-                    return execCmd('plpbridge --cable=ftdi@digilent --boot-mode=jtag --binary=%s --chip=gap %s' % (binary, commands))
+                    return execCmd('plpbridge --cable=ftdi@digilent --boot-mode=jtag --binary=%s --chip=%s %s' % (binary, chip_name, commands))
             elif self.get_json().get_child_str('**/chip/name') in ['wolfe']:
                 return execCmd('plpbridge --cable=ftdi --boot-mode=jtag --binary=%s --chip=wolfe %s' % (binary, commands))
             elif self.get_json().get_child_str('**/chip/name') in ['vivosoc3']:
