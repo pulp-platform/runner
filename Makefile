@@ -1,6 +1,7 @@
 WORKSTATION_PKG ?= $(INSTALL_DIR)
 
 HEADER_FILES += $(shell find python -name "*.py")
+HEADER_FILES += python/runner/fpga/pulpissimo/elf_run_genesys2.sh
 
 
 define declareInstallFile
