@@ -430,7 +430,7 @@ class FlashImage(object):
                         dumpByteToSlm(file, i, self.buff[i])
 
 
-def genFlashImage(slmStim=None, raw_stim=None, bootBinary=None, comps=[], verbose=False, archi=None, encrypt=False, aesKey=None, aesIv=None, flashType='spi', qpi=True):
+def genFlashImage(slmStim=None, raw_stim=None, bootBinary=None, comps=[], verbose=True, archi=None, encrypt=False, aesKey=None, aesIv=None, flashType='spi', qpi=True):
     if bootBinary != None or len(comps) != 0:
         if slmStim != None or raw_stim is not None:
             compsList = ''

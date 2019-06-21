@@ -95,7 +95,7 @@ class stim(object):
 
     with open(filename, 'w') as file:
       for key in sorted(self.mem.keys()):
-        file.write('%X_%0*X\n' % (int(key), width*2, self.mem.get(key)))
+        file.write('@%X %0*X\n' % (int(key), width, self.mem.get(key)))
 
   def __parse_binaries(self, width):
 
@@ -144,9 +144,12 @@ class stim(object):
   def gen_stim_slm_64(self, stim_file):
 
     self.__parse_binaries(8)
+    self.__gen_stim_slm(stim_file, 16)
 
+  def gen_stim_slm_32(self, stim_file):
+
+    self.__parse_binaries(4)
     self.__gen_stim_slm(stim_file, 8)
-
 
   def gen_stim_bin(self, stim_file):
 

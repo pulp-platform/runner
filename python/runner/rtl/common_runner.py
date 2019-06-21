@@ -168,14 +168,14 @@ class Runner(Platform):
                 encrypt=encrypted, aesKey=aes_key, aesIv=aes_iv):
                 return -1
 
-        else:
+        # else:
 
-            stim = runner.stim_utils.stim(verbose=self.get_json().get('**/runner/verbose').get())
+        stim = runner.stim_utils.stim(verbose=self.get_json().get('**/runner/verbose').get())
 
-            for binary in self.get_json().get('**/runner/binaries').get_dict():
-                stim.add_binary(binary)
+        for binary in self.get_json().get('**/runner/binaries').get_dict():
+            stim.add_binary(binary)
 
-            stim.gen_stim_slm_64('vectors/stim.txt')
+        stim.gen_stim_slm_32('vectors/stim.txt')
 
 
         if self.get_json().get('**/efuse') is not None:
