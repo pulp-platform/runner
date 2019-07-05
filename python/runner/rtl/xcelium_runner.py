@@ -94,7 +94,7 @@ class Runner(runner.Runner):
             self.__create_symlink(self.rtl_path, 'cds.lib')
             self.__create_symlink(self.rtl_path, 'hdl.var')
             self.__create_symlink(self.rtl_path, 'waves')
-            self.__create_symlink(self.rtl_path, 'xcsim_libs')
+            self.__copy_link(self.rtl_path, 'xcsim_libs')
             self.__create_symlink(self.rtl_path, 'min_access.txt')
             # self.__copy_link(self.rtl_path, 'work')
 
@@ -112,6 +112,7 @@ class Runner(runner.Runner):
             xmelab_args = self.get_json().get('**/vsim/tcl_args').get_dict()
             xmsim_args = self.get_json().get('**/vsim/args').get_dict()
             gui = self.get_json().get_child_str('**/vsim/gui')
+            power_sim = self.get_json().get_child_str('**/runner/power_sim')
 
             # recordwlf = self.get_json().get_child_str('**/vsim/recordwlf')
             # vsimdofile = self.get_json().get_child_str('**/vsim/dofile')
@@ -183,18 +184,36 @@ class Runner(runner.Runner):
                                -nowarn ENUMERR \
                                -nowarn CUVWSP \
                                -nowarn INTWID \
-                               -disable_sem2009 \
                                -gateloopwarn \
                                -show_forces \
-                               -always_trigger \
-                               -loadpli %s/tools/methodology/UVM/CDNS-1.1d/additions/sv/lib/64bit/libuvmpli.so:uvm_pli_boot \
-                               -dpiheader %s/../tb/tb_driver/dpiheader.h' % (os.environ.get('XCELIUM_ROOT'), self.__get_rtl_path()))
+                               -always_trigger')
+            
+            if power_sim:
+              print ('XMELAB: power mode enabled')
+              xmelab_args.append('\
+                               -lps_cpf %s/../../fe/cpf/tb.cpf \
+                               -lps_dbc -lps_int_nocorrupt -lps_condsig_replay -lps_replay_comb_always \
+                               -lps_pwrdwn_replay_disable \
+                               -lps_force_reapply \
+                               -lps_mvs \
+                               -lps_logfile cpf.log -lps_verbose 3' % (self.__get_rtl_path()))
 
+# -lps_pmode -lps_pmcheck_only 
+# -lps_isofilter_verbose 
+# -lps_isoruleopt_warn 
+                                # -abvdisableasrtst \
+                                # -noassert \
+                               # -lps_stime 2ms \
+
+            xmelab_args.append('-loadpli %s/tools/methodology/UVM/CDNS-1.1d/additions/sv/lib/64bit/libuvmpli.so:uvm_pli_boot \
+                                -dpiheader %s/../tb/tb_driver/dpiheader.h' % (os.environ.get('XCELIUM_ROOT'), self.__get_rtl_path()))
+
+                               # -disable_sem2009 \
                                # -atstar_selftrigger \
                                # -default_delay_mode distributed \
                                # -no_tchk_msg \
-                               # -noassert \
 
+            os.environ['GWT_CPF_TARGET'] = "rtl"
 
             xmsim_args.append('"+UVM_TESTNAME=csi2_rx_pkt_raw8" "+UVM_VERBOSITY=UVM_LOW" "+phy_sel=dphy" "+lane=2lane" "+data_width=8bit" "+frame_mode=Gen" \
                                -64bit \
@@ -203,15 +222,20 @@ class Runner(runner.Runner):
                                -profile \
                                -messages \
                                -xceligen on \
+                               -lps_real_nocorrupt \
                                -assert_logging_error_off \
                                +VSIM_PATH=%s' % (os.environ.get('XCSIM_PATH')))
+
+            if power_sim:
+              print ('XMSIM: power mode enabled')
+              xmsim_args.append('-lps_real_nocorrupt \
+                                 -lps_initial_replay_first')
+           
             xmsim_args.append('-sv_lib %s/install/ws/lib/libpulpdpi' % (os.environ.get('PULP_SDK_HOME')))
             xmsim_args.append('-sv_lib %s/tools/methodology/UVM/CDNS-1.1d/additions/sv/lib/64bit/libuvmdpi.so \
                                -INPUT "@source %s/tools/methodology/UVM/CDNS-1.1d/additions/sv/files/tcl/uvm_sim.tcl"'
                                 % (os.environ.get('XCELIUM_ROOT'), os.environ.get('XCELIUM_ROOT')))
 
-
-           
             if gui:
                 xmelab_args.append('-access +rwc +fsmdebug \
                                     -createdebugdb')
