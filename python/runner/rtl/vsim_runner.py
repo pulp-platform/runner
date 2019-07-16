@@ -66,32 +66,27 @@ class Runner(runner.Runner):
 
         if self.rtl_path is None:
 
-            vsim_chip = self.get_json().get_child_str('**/runner/vsim_chip')
-            if vsim_chip is None:
-                vsim_chip = self.get_json().get('**/pulp_chip_family').get()
-
-            chip_path_name = 'PULP_RTL_%s' % vsim_chip.upper()
-            chip_path = os.environ.get(chip_path_name)
             vsim_path = os.environ.get('VSIM_PATH')
 
             if vsim_path is not None:
-                path_name = chip_path_name
                 self.rtl_path = vsim_path
-            elif chip_path is not None:
-                path_name = 'VSIM_PATH'
-                self.rtl_path = chip_path
             else:
-                raise Exception("WARNING: no RTL install specified, neither %s nor VSIM_PATH is defined:" % (chip_path_name))
-
+                raise Exception("WARNING: no RTL install specified, VSIM_PATH is not defined:")
 
             if not os.path.exists(self.rtl_path):
-                raise Exception("ERROR: %s=%s path does not exist" % (path_name, self.rtl_path))
-
-            os.environ['VSIM_PATH'] = os.getcwd()
-            print ('Setting VSIM_PATH in runner to %s' % os.environ.get('VSIM_PATH'))
+                raise Exception("ERROR: %s path does not exist" % (self.rtl_path))
 
             os.environ['VSIM_SRC_PATH'] = vsim_path
             print ('Setting VSIM_SRC_PATH in runner to %s' % os.environ.get('VSIM_SRC_PATH'))
+
+            # new vsim_path relative to build dir
+            os.environ['VSIM_PATH'] = os.getcwd()
+            print ('Setting VSIM_PATH in runner to %s' % os.environ.get('VSIM_PATH'))
+
+            # workaround for deploy rtl platform modelsim.ini modified and using VSIM_PLATFORM env var
+            os.environ['VSIM_PLATFORM'] = os.getcwd()
+            print ('Setting VSIM_PLATFORM in runner to %s' % os.environ.get('VSIM_PLATFORM'))
+
             # os.environ['PULP_PATH'] = self.rtl_path
             # os.environ['TB_PATH']   = self.rtl_path
 

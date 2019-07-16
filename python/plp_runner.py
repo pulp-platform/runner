@@ -176,8 +176,6 @@ class Runner(object):
             pass
         os.chdir(testPath)
 
-
-
         config_path = self.config.getOption('config_file')
         config_name = self.config.getOption('config_name')
 
