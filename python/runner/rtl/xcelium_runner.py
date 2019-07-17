@@ -82,6 +82,7 @@ class Runner(runner.Runner):
 
             os.environ['XCSIM_PATH'] = os.getcwd()
             print ('Setting XCSIM_PATH in runner to %s' % os.environ.get('XCSIM_PATH'))
+
             os.environ['VSIM_PATH'] = os.getcwd()
             print ('Setting VSIM_PATH in runner to %s' % os.environ.get('VSIM_PATH'))
             # os.environ['PULP_PATH'] = self.rtl_path
@@ -103,8 +104,8 @@ class Runner(runner.Runner):
 
     def __get_sim_cmd(self):
 
-
         rtl_simulator = self.get_json().get_child_str('**/runner/rtl_simulator')
+
         if rtl_simulator == 'xcelium':
             # vsim_script = self.get_json().get_child_str('**/vsim/script')
             # tcl_args = self.get_json().get('**/vsim/tcl_args').get_dict()
@@ -225,6 +226,11 @@ class Runner(runner.Runner):
                                -lps_real_nocorrupt \
                                -assert_logging_error_off \
                                +VSIM_PATH=%s' % (os.environ.get('XCSIM_PATH')))
+
+            xcsim_flags = os.environ.get('VSIM_FLAGS')
+            if xcsim_flags is not None:
+              xmsim_args.append('%s' % xcsim_flags)
+
 
             if power_sim:
               print ('XMSIM: power mode enabled')

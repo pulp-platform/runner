@@ -103,7 +103,6 @@ class Runner(runner.Runner):
 
     def __get_sim_cmd(self):
 
-
         rtl_simulator = self.get_json().get_child_str('**/runner/rtl_simulator')
 
         if rtl_simulator == 'vsim':
