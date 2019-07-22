@@ -91,6 +91,7 @@ class Runner(runner.Runner):
             os.environ['PULP_PATH'] = self.rtl_path
             os.environ['TB_PATH']   = self.rtl_path
 
+            os.environ['VSIM_PLATFORM'] = os.getcwd()
 
             self.__create_symlink(self.rtl_path, 'boot')
             self.__create_symlink(self.rtl_path, 'modelsim.ini')
