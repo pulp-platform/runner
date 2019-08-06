@@ -260,7 +260,7 @@ class FlashImage(object):
 
         # First compute areas flash information
         flashOffset = 0
-        flashOffset += 4 + 4 + 4 + 4 + len(self.bootBinary.segments) * 4 * 4
+        flashOffset += 4 + 4 + 4 + 4 + 16 * 4 * len(self.bootBinary.segments)
 
         crc_offset = flashOffset
         flashOffset += 4
