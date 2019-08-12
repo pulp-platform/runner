@@ -330,7 +330,7 @@ class Efuse(object):
         efuses[38] = info4
         efuses[39] = info5 
         efuses[40] = info6
-      else:
+      elif pulp_chip == 'gap_rev1':
           info3 = 0
           info6 = 0
           if load_mode == 'rom':
@@ -373,6 +373,66 @@ class Efuse(object):
           efuses.append('39:%s' % 0)        
           efuses.append('40:%s' % (info6))
                   
+      elif pulp_chip == 'gap8_revc':
+
+          fll_freq = self.config.get_child_int('**/efuse/fll/freq')
+          fll_assert_cycles = self.config.get_child_int('**/efuse/fll/assert_cycles')
+          fll_lock_tolerance = self.config.get_child_int('**/efuse/fll/lock_tolerance')
+          efuses = [0] * 128
+          info3 = 0
+          info2 = 0
+          info6 = 0
+          if load_mode == 'rom':
+            # RTL platform | flash boot | no encryption | no wait xtal
+            load_mode_hex = 2 | (2 << 3) | (0 << 4) | (0 << 5) | (0 << 6) | (0 << 7)
+          elif load_mode == 'rom_hyper':
+            # RTL platform | flash boot | no encryption | no wait xtal
+            load_mode_hex = 2 | (2 << 3) | (0 << 4) | (0 << 5) | (0 << 6) | (0 << 7)
+            # Hyperflash type
+            info3 = (1 << 0)
+          elif load_mode == 'rom_spim':
+            # RTL platform | flash boot | no encryption | no wait xtal
+            load_mode_hex = 2 | (2 << 3) | (0 << 4) | (0 << 5) | (0 << 6) | (0 << 7)
+            # SPI flash type
+            info3 = (0 << 0)
+          
+          if fll_freq is not None:
+            info2 |= (1 << 0)
+            efuses[57] = fll_freq
+
+          if fll_lock_tolerance is not None or fll_assert_cycles is not None:
+            info2 |= (1<< 1)
+            efuses[58] = fll_lock_tolerance
+            efuses[59] = fll_assert_cycles
+
+          if xtal_check:
+              if load_mode_hex == None: load_mode_hex = 0
+              load_mode_hex |= 1<<7
+              delta = int(xtal_check_delta*((1 << 15)-1))
+              efuses[26] = delta & 0xff
+              efuses[27] = (delta >> 8) & 0xff
+              efuses[28] = xtal_check_min & 0xff
+              efuses[29] = (xtal_check_min >> 8) & 0xff
+              efuses[30] = xtal_check_max & 0xff
+              efuses[31] = (xtal_check_max >> 8) & 0xff
+
+          if load_mode_hex != None:
+              if encrypted: 
+                  load_mode_hex |= 0x40
+                  info6 |= 1<<4
+                  for i in range(0, 16):
+                      efuses[2+i] = int('0x%s' % aes_key[30-i*2:32-i*2], 0)
+                  for i in range(0, 8):
+                      efuses[18+i] = int('0x%s' % aes_iv[14-i*2:16-i*2], 0)
+
+              efuses[0] = load_mode_hex
+      
+          efuses[1] = info2
+          efuses[37] = info3
+          efuses[38] = 0
+          efuses[39] = 0     
+          efuses[40] = info6
+                  
 
     # Efuse preloading file generation
     if pulp_chip == 'vega':
@@ -385,7 +445,21 @@ class Efuse(object):
               value = efuses[efuseId]
               self.dump('  Writing register (index: %d, value: 0x%x)' % (efuseId, value))
               file.write('{0:032b}\n'.format(value))
+  
+    elif pulp_chip == 'gap8_revc':
 
+      values = [0] * nb_regs * 8
+      for efuseId in range (0, nb_regs):
+          value = efuses[efuseId]
+          self.dump('  Writing register (index: %d, value: 0x%x)' % (efuseId, value))
+          for index in range(0, 8):
+              if (value >> index) & 1 == 1: values[efuseId + index*128] = 1
+
+      self.dump('  Generating to file: ' + filename)
+
+      with open(filename, 'w') as file:
+          for value in values:
+              file.write('%d ' % (value))
 
     else:
 

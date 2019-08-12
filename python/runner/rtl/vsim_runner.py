@@ -164,6 +164,7 @@ class Runner(runner.Runner):
             else:
                 if gui:
                     vsim_args.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_rtl_path())
+                    vsim_args.append("-do 'source %s/tcl_files/%s; '" % (self.__get_rtl_path(), vsim_script))
                 else:
                     vsim_args.append("-c")
                     vsim_args.append("-do 'source %s/tcl_files/config/run_and_exit.tcl'" % self.__get_rtl_path())
