@@ -382,6 +382,7 @@ class Efuse(object):
           info3 = 0
           info2 = 0
           info6 = 0
+          info7 = 1 # Don't use UDMA MEMCPY as it makes RTL platform crash
           if load_mode == 'rom':
             # RTL platform | flash boot | no encryption | no wait xtal
             load_mode_hex = 2 | (2 << 3) | (0 << 4) | (0 << 5) | (0 << 6) | (0 << 7)
@@ -432,6 +433,7 @@ class Efuse(object):
           efuses[38] = 0
           efuses[39] = 0     
           efuses[40] = info6
+          efuses[60] = info7
                   
 
     # Efuse preloading file generation
