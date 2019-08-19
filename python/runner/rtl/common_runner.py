@@ -21,6 +21,7 @@
 
 from plp_platform import *
 import runner.plp_flash_stimuli as plp_flash_stimuli
+import runner.plp_flash_stimuli_vivo3 as plp_flash_stimuli_vivo3
 import time
 import sys
 import subprocess
@@ -141,7 +142,7 @@ class Runner(Platform):
 
         self.__check_env()
 
-        if self.get_json().get('**/runner/boot_from_flash').get() or self.get_json().get_child_str('**/pulp_chip_family').find('vivosoc3') != -1:
+        if self.get_json().get_child_str('**/pulp_chip_family').find('vivosoc3') != -1:
 
             # Boot from flash, we need to generate the flash image
             # containing the application binary.
@@ -158,7 +159,7 @@ class Runner(Platform):
             aes_key = self.get_json().get_child_str('**/efuse/aes_key')
             aes_iv = self.get_json().get_child_str('**/efuse/aes_iv')
 
-            if plp_flash_stimuli.genFlashImage(
+            if plp_flash_stimuli_vivo3.genFlashImage(
                 slmStim=self.get_json().get('**/runner/flash_slm_file').get(),
                 rawStim=self.get_json().get('**/runner/flash_raw_file').get(),
                 binDescr=self.get_json().get('**/runner/flash_binDescr_file').get(),
@@ -170,15 +171,54 @@ class Runner(Platform):
                 flashType=self.get_json().get('**/runner/flash_type').get(),
                 encrypt=encrypted, aesKey=aes_key, aesIv=aes_iv):
                 return -1
+    
+            if not self.get_json().get('**/runner/boot_from_flash').get():
 
-        if not self.get_json().get('**/runner/boot_from_flash').get():
+                stim = runner.stim_utils.stim(verbose=self.get_json().get('**/runner/verbose').get())
 
-            stim = runner.stim_utils.stim(verbose=self.get_json().get('**/runner/verbose').get())
+                for binary in self.get_json().get('**/runner/binaries').get_dict():
+                    stim.add_binary(binary)
 
-            for binary in self.get_json().get('**/runner/binaries').get_dict():
-                stim.add_binary(binary)
+                stim.gen_stim_slm_64('vectors/stim.txt')
 
-            stim.gen_stim_slm_64('vectors/stim.txt')
+
+        else:
+
+            if self.get_json().get('**/runner/boot_from_flash').get():
+
+                # Boot from flash, we need to generate the flash image
+                # containing the application binary.
+                # This will generate SLM files used by the RTL platform
+                # to preload the flash.
+                comps = []
+                fs = self.get_json().get('**/fs')
+                if fs is not None:
+                    comps_conf = self.get_json().get('**/flash/fs/files')
+                    if comps_conf is not None:
+                        comps = comps_conf.get_dict()
+
+                encrypted = self.get_json().get_child_str('**/efuse/encrypted')
+                aes_key = self.get_json().get_child_str('**/efuse/aes_key')
+                aes_iv = self.get_json().get_child_str('**/efuse/aes_iv')
+
+                if plp_flash_stimuli.genFlashImage(
+                    slmStim=self.get_json().get('**/runner/flash_slm_file').get(),
+                    bootBinary=self.get_json().get('**/runner/binaries').get_elem(0).get(),
+                    comps=comps,
+                    verbose=self.get_json().get('**/runner/verbose').get(),
+                    archi=self.get_json().get('**/pulp_chip_family').get(),
+                    flashType=self.get_json().get('**/runner/flash_type').get(),
+                    encrypt=encrypted, aesKey=aes_key, aesIv=aes_iv):
+                    return -1
+
+            else:
+
+                stim = runner.stim_utils.stim(verbose=self.get_json().get('**/runner/verbose').get())
+
+                for binary in self.get_json().get('**/runner/binaries').get_dict():
+                    stim.add_binary(binary)
+
+                stim.gen_stim_slm_64('vectors/stim.txt')
 
 
         if self.get_json().get('**/efuse') is not None:

@@ -38,13 +38,9 @@ if(len(sys.argv) < 2):
     quit()
 
 
-rom_size      = 1024 # in double words (64 bit)
+rom_size      = 2048 # in double words (32 bit)
 rom_start     = 0x1A000000
-rom_end       = rom_start + rom_size * 8 - 1
-
-l2_size      = 128 # in double words (64 bit)
-l2_start     = 0x1C02FE00
-l2_end       = l2_start + l2_size * 8 - 1
+rom_end       = rom_start + rom_size * 4 - 1
 
 
 ###############################################################################
@@ -123,8 +119,6 @@ bytes_to_words(s19_dict, slm_dict)
 # word align all addresses
 rom_start   = rom_start   >> 2
 rom_end     = rom_end     >> 2
-l2_start    = l2_start   >> 2
-l2_end      = l2_end     >> 2
 
 ###############################################################################
 # open files
@@ -136,16 +130,16 @@ vlog_file = open("boot_code.sv",  'w')
 vlog_file.write("""
 module boot_code
 (
-    input  logic        CLK,
-    input  logic        RSTN,
+  input  logic        CLK,
+  input  logic        RSTN,
 
-    input  logic        CSN,
-    input  logic [8:0]  A,
-    output logic [63:0] Q
-  );
+  input  logic        CSN,
+  input  logic [%d:0] A,
+  output logic [31:0] Q
+);
 
-  const logic [63:0] mem[0:%d] = {
-""" % (rom_size-1));
+  const logic [0:%d][31:0] mem = {
+""" % (math.log(rom_size, 2)-1, rom_size-1));
 
 ###############################################################################
 # write the stimuli
@@ -172,16 +166,21 @@ for addr in sorted(slm_dict.keys()):
             else:
                 data_odd  = data
                 if archi == 'GAP': rom_file.write("@%x %s%s\n" % ((addr & 0xffff) / 2, data_odd, data_even))
-                elif archi in [ 'vega', 'wolfe', 'quentin', 'devchip', 'pulp', 'pulpissimo']:
+                elif archi == 'vega' or archi == 'wolfe' or archi == 'quentin' or archi == 'devchip':
                     rom_file.write("{0:032b}\n" .format(int('0x' + data_even, 16)))
                     rom_file.write("{0:032b}\n" .format(int('0x' + data_odd,  16)))
                     #rom_file.write("@%x %s\n" % ((addr & 0xffff)-1, data_even))
                     #rom_file.write("@%x %s\n" % ((addr & 0xffff), data_odd))
-                elif archi == 'vivosoc3':
+                elif archi == 'vivosoc3' or archi == 'vivosoc3_1':
                     rom_file.write("@%x %s\n" % ((addr & 0xffff)-1, data_even))
                     rom_file.write("@%x %s\n" % ((addr & 0xffff), data_odd))
                 else: rom_file.write("%s%s\n" % (data_odd, data_even))
-                vlog_file.write("    64'h%s%s,\n" % (data_odd, data_even))
+
+                if archi == 'vivosoc3' or archi == 'vivosoc3_1':
+                    vlog_file.write("    32'h%s,\n" % (data_even))
+                    vlog_file.write("    32'h%s,\n" % (data_odd))
+                else:
+                    vlog_file.write("    64'h%s%s,\n" % (data_odd, data_even))
         else:
             if((addr%2) == 0):
                 data_even = data
@@ -198,18 +197,19 @@ vlog_file.write("""};
 
   logic [%d:0] A_Q;
 
-  always_ff @(posedge CLK or negedge RSTN)
-  begin
-    if (~RSTN)
+  always_ff @(posedge CLK or negedge RSTN) begin
+    if (~RSTN) begin
       A_Q <= '0;
-    else
-      if (~CSN)
-        A_Q <= A;
+    end
+    else begin
+      if (~CSN) A_Q <= A;
+    end
   end
 
   assign Q = mem[A_Q];
 
-endmodule""" % (math.log(rom_size, 2)));
+endmodule""" % (math.log(rom_size, 2)-1));
+
 
 ###############################################################################
 # close all files
