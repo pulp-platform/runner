@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 #
 # Copyright (C) 2018 ETH Zurich, University of Bologna and GreenWaves Technologies
 #
@@ -22,6 +24,7 @@ from elftools.elf.elffile import ELFFile
 import os
 import os.path
 import struct
+import argparse
 
 
 
@@ -333,3 +336,22 @@ class Efuse(object):
       with open(filename, 'w') as file:
           for value in values:
               file.write('%d ' % (value))
+
+if __name__ == "__main__":
+  parser = argparse.ArgumentParser(description='Generate stimuli')
+
+  parser.add_argument("--binary", dest="binary", default=None, help="Specify input binary")
+  parser.add_argument("--vectors", dest="vectors", default=None, help="Specify output vectors file")
+
+  args = parser.parse_args()
+
+  if args.binary is None:
+    raise Exception('Specify the input binary with --binary=<path>')
+
+  if args.vectors is not None:
+
+    stim_gen = stim(verbose=True)
+
+    stim_gen.add_binary(args.binary)
+
+    stim_gen.gen_stim_slm_64(args.vectors)
