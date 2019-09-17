@@ -123,10 +123,13 @@ class Runner(Platform):
             chip_name = self.get_json().get_child_str('**/chip/name')
 
             if chip_name in ['gap', 'gap_rev1']:
+
+                bridge_opt = '--config %s --cable %s' % (self.config.getOption('config_file'), self.get_json().get_child_str('**/debug_bridge/cable/type'))
+
                 if self.get_json().get_child_str('**/runner/boot-mode') == 'dev_hyper':
-                    return execCmd('plpbridge --cable=ftdi@digilent --boot-mode=jtag_hyper --chip=%s load' % chip_name)
+                    return execCmd('plpbridge %s --boot-mode=jtag_hyper load' % (bridge_opt))
                 else:
-                    return execCmd('plpbridge --cable=ftdi@digilent --boot-mode=jtag --binary=%s --chip=%s %s' % (binary, chip_name, commands))
+                    return execCmd('plpbridge %s --boot-mode=jtag --binary=%s %s' % (bridge_opt, binary, commands))
             elif self.get_json().get_child_str('**/chip/name') in ['wolfe']:
                 return execCmd('plpbridge --cable=ftdi --boot-mode=jtag --binary=%s --chip=wolfe %s' % (binary, commands))
             elif self.get_json().get_child_str('**/chip/name') in ['vivosoc3']:

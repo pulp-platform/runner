@@ -188,7 +188,7 @@ class Runner(object):
 
             config_path = os.path.join(
                 os.path.dirname(os.path.dirname(sys.argv[0])),
-                'configs', 'chips', config_name, '%s.json' % config_name
+                'configs', 'config', '%s.json' % config_name
             )
 
 
