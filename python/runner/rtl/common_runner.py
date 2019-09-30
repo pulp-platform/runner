@@ -235,6 +235,8 @@ class Runner(Platform):
 
         bridge_active = False
 
+        self.get_json().set('**/debug_bridge/cable/type', 'jtag-proxy')
+
         if gdb is not None and gdb.get_bool() or autorun is not None and autorun.get_bool():
             bridge_active = True
             self.get_json().get('**/jtag_proxy').set('active', True)
