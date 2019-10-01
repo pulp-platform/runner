@@ -22,4 +22,4 @@ class Runner(runner.Runner):
 
         self.set_param('ENTRY_POINT', '0x%x' % self.get_stim().get_entry())
 
-        super(Runner, self).run()
+        return super(Runner, self).run()
