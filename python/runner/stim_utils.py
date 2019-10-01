@@ -39,6 +39,11 @@ class stim(object):
 
     self.dump('Created stimuli generator')
 
+  def get_entry(self):
+    with open(self.binaries[0], 'rb') as file:
+        elffile = ELFFile(file)
+        return elffile.header['e_entry']
+
   def dump(self, str):
     if self.verbose:
       print (str)
