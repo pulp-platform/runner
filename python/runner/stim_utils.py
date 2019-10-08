@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 #
 # Copyright (C) 2018 ETH Zurich, University of Bologna and GreenWaves Technologies
 #
@@ -22,6 +24,7 @@ from elftools.elf.elffile import ELFFile
 import os
 import os.path
 import struct
+import argparse
 
 
 
@@ -35,6 +38,11 @@ class stim(object):
     self.areas = []
 
     self.dump('Created stimuli generator')
+
+  def get_entry(self):
+    with open(self.binaries[0], 'rb') as file:
+        elffile = ELFFile(file)
+        return elffile.header['e_entry']
 
   def dump(self, str):
     if self.verbose:
@@ -199,7 +207,7 @@ class Efuse(object):
 
     pulp_chip_family = self.config.get_child_str('**/chip/pulp_chip_family')
 
-    if pulp_chip_family == 'gap' or pulp_chip == 'vega':
+    if pulp_chip_family == 'gap' or pulp_chip == 'vega' or pulp_chip == 'gap9':
 
       load_mode = self.config.get_child_str('**/runner/boot-mode')
       encrypted = self.config.get_child_str('**/efuse/encrypted')
@@ -250,7 +258,7 @@ class Efuse(object):
 
             efuses.append('0:%s' % load_mode_hex)
     
-      elif pulp_chip == 'vega':
+      elif pulp_chip == 'vega' or pulp_chip == 'gap9':
         efuses = [0] * 128
         info2 = 0
         info3 = 0
@@ -437,7 +445,7 @@ class Efuse(object):
                   
 
     # Efuse preloading file generation
-    if pulp_chip == 'vega':
+    if pulp_chip == 'vega' or pulp_chip == 'gap9':
 
       self.dump('  Generating to file: ' + filename)
 
@@ -479,3 +487,22 @@ class Efuse(object):
       with open(filename, 'w') as file:
           for value in values:
               file.write('%d ' % (value))
+
+if __name__ == "__main__":
+  parser = argparse.ArgumentParser(description='Generate stimuli')
+
+  parser.add_argument("--binary", dest="binary", default=None, help="Specify input binary")
+  parser.add_argument("--vectors", dest="vectors", default=None, help="Specify output vectors file")
+
+  args = parser.parse_args()
+
+  if args.binary is None:
+    raise Exception('Specify the input binary with --binary=<path>')
+
+  if args.vectors is not None:
+
+    stim_gen = stim(verbose=True)
+
+    stim_gen.add_binary(args.binary)
+
+    stim_gen.gen_stim_slm_64(args.vectors)

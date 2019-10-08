@@ -89,6 +89,11 @@ class Runner(Platform):
         if args.boot_from_flash:
             js_config.get('**/runner').set('boot_from_flash', True)
 
+        self.stim = runner.stim_utils.stim(verbose=self.get_json().get('**/runner/verbose').get())
+
+        for binary in self.get_json().get('**/runner/binaries').get_dict():
+            self.stim.add_binary(binary)
+
         self.env = {}
         self.rtl_path = None
 
@@ -98,6 +103,9 @@ class Runner(Platform):
 
     def get_params(self):
         return self.params
+
+    def get_stim(self):
+        return self.stim
 
     def power(self):
         os.environ['POWER_VCD_FILE'] = os.path.join(os.getcwd(), 'cluster_domain.vcd.gz')
@@ -174,12 +182,7 @@ class Runner(Platform):
     
             if not self.get_json().get('**/runner/boot_from_flash').get():
 
-                stim = runner.stim_utils.stim(verbose=self.get_json().get('**/runner/verbose').get())
-
-                for binary in self.get_json().get('**/runner/binaries').get_dict():
-                    stim.add_binary(binary)
-
-                stim.gen_stim_slm_64('vectors/stim.txt')
+                self.stim.gen_stim_slm_64('vectors/stim.txt')
 
 
         else:
@@ -213,12 +216,7 @@ class Runner(Platform):
 
             else:
 
-                stim = runner.stim_utils.stim(verbose=self.get_json().get('**/runner/verbose').get())
-
-                for binary in self.get_json().get('**/runner/binaries').get_dict():
-                    stim.add_binary(binary)
-
-                stim.gen_stim_slm_64('vectors/stim.txt')
+                self.stim.gen_stim_slm_64('vectors/stim.txt')
 
 
         if self.get_json().get('**/efuse') is not None:
@@ -234,6 +232,8 @@ class Runner(Platform):
         autorun = self.get_json().get('**/debug_bridge/autorun')
 
         bridge_active = False
+
+        self.get_json().set('**/debug_bridge/cable/type', 'jtag-proxy')
 
         if gdb is not None and gdb.get_bool() or autorun is not None and autorun.get_bool():
             bridge_active = True
