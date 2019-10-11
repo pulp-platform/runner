@@ -5,7 +5,6 @@ from plp_platform import *
 import os
 import os.path
 import time
-import plptree
 import runner.plp_flash_stimuli as plp_flash_stimuli
 
 def execCmd(cmd):
@@ -124,7 +123,7 @@ class Runner(Platform):
 
             if chip_name in ['gap', 'gap_rev1']:
 
-                bridge_opt = '--config %s --cable %s' % (self.config.getOption('config_file'), self.get_json().get_child_str('**/debug_bridge/cable/type'))
+                bridge_opt = '--config %s --cable %s' % (self.config.getOption('config_name'), self.get_json().get_child_str('**/debug_bridge/cable/type'))
 
                 if self.get_json().get_child_str('**/runner/boot-mode') == 'dev_hyper':
                     return execCmd('plpbridge %s --boot-mode=jtag_hyper load' % (bridge_opt))
