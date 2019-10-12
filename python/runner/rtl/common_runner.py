@@ -282,7 +282,7 @@ class Runner(Platform):
             if options is None:
                 options  = ''
 
-            bridge_cmd = 'plpbridge --config=%s/rtl_config.json --verbose=10 --port=%s %s' % (os.getcwd(), port, options)
+            bridge_cmd = 'plpbridge --config-path=%s/rtl_config.json --verbose=10 --port=%s %s' % (os.getcwd(), port, options)
             print ('Launching bridge with command:')
             print (bridge_cmd)
             time.sleep(10)

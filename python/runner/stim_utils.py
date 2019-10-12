@@ -195,11 +195,18 @@ class Efuse(object):
   def gen_stim_txt(self, filename):
 
 
+    user_efuses = {}
+
     efuses = self.config.get('**/efuse/values')
     if efuses is None:
       efuses = []
     else:
       efuses = efuses.get_dict()
+      for efuse in efuses:
+        efuse_id, val = efuse.split(':')
+        efuse_id = int(efuse_id, 0)
+        val = int(val, 0)
+        user_efuses[efuse_id] = val
 
     nb_regs = self.config.get_child_int('**/efuse/nb_regs')
 
@@ -460,10 +467,12 @@ class Efuse(object):
 
       values = [0] * nb_regs * 8
       for efuseId in range (0, nb_regs):
+        value = user_efuses.get(efuseId)
+        if value is None:
           value = efuses[efuseId]
-          self.dump('  Writing register (index: %d, value: 0x%x)' % (efuseId, value))
-          for index in range(0, 8):
-              if (value >> index) & 1 == 1: values[efuseId + index*128] = 1
+        self.dump('  Writing register (index: %d, value: 0x%x)' % (efuseId, value))
+        for index in range(0, 8):
+            if (value >> index) & 1 == 1: values[efuseId + index*128] = 1
 
       self.dump('  Generating to file: ' + filename)
 
