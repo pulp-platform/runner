@@ -391,6 +391,9 @@ class Efuse(object):
       elif pulp_chip == 'gap8_revc':
 
           fll_freq = self.config.get_child_int('**/efuse/fll/freq')
+          ref_clk_wait = self.config.get_child_int('**/efuse/ref_clk_wait')
+          burst_size = self.config.get_child_int('**/efuse/burst_size')
+          flash_id = self.config.get_child_bool('**/efuse/flash_id')
           fll_assert_cycles = self.config.get_child_int('**/efuse/fll/assert_cycles')
           fll_lock_tolerance = self.config.get_child_int('**/efuse/fll/lock_tolerance')
           efuses = [0] * 128
@@ -412,9 +415,27 @@ class Efuse(object):
             # SPI flash type
             info3 = (0 << 0)
           
+          if burst_size is not None:
+            info6 |= (1 << 7)
+            efuses[61] = burst_size & 0xff
+            efuses[62] = (burst_size >> 8) & 0xff
+
+          if flash_id:
+            info6 |= (1 << 5)
+
           if fll_freq is not None:
             info2 |= (1 << 0)
             efuses[57] = fll_freq
+
+          if ref_clk_wait is not None:
+            info2 |= (1 << 6)
+            efuses[35] = ref_clk_wait & 0xff
+            efuses[36] = (ref_clk_wait >> 8) & 0xff
+          else:
+            info2 |= (1 << 6)
+            efuses[35] = 0
+            efuses[36] = 0
+
 
           if fll_lock_tolerance is not None or fll_assert_cycles is not None:
             info2 |= (1<< 1)

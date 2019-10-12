@@ -248,6 +248,10 @@ class Runner(runner.Runner):
             if enableJtagTargetSync:
                 tcl_args.append('+ENABLE_JTAG_TARGET_SYNC=1')
 
+            eoc_check_wait = self.get_json().get_child_str('**/vsim/eoc_check_wait')
+            if eoc_check_wait is not None:
+                tcl_args.append('+EOC_CHECK_WAIT=%s' % eoc_check_wait)
+
             if len(tcl_args) != 0:
                 self.set_env('VSIM_RUNNER_FLAGS', ' '.join(tcl_args))
             
