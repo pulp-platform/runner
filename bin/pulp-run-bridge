@@ -53,7 +53,7 @@ for line in io.TextIOWrapper(prun.stderr, encoding="utf-8"):
 if port is None:
     exit(-1)
 
-bridge_cmd = 'plpbridge --config=%s/plt_config.json --verbose=10 --port=%s' % (os.getcwd(), port)
+bridge_cmd = 'plpbridge --config-path=%s/plt_config.json --verbose=10 --port=%s' % (os.getcwd(), port)
 if args.options is not None:
   bridge_cmd += ' ' + args.options
 print ('Launching bridge with command:')
