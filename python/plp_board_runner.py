@@ -58,7 +58,7 @@ class Runner(Platform):
 
     def prepare(self):
         comps = []
-        comps_conf = self.get_json().get('**/fs/files')
+        comps_conf = self.get_json().get('**/flash/fs/files')
         if comps_conf is not None:
             comps = comps_conf.get_dict()
 
@@ -123,7 +123,13 @@ class Runner(Platform):
 
             if chip_name in ['gap', 'gap_rev1']:
 
-                bridge_opt = '--config %s --cable %s' % (self.config.getOption('config_name'), self.get_json().get_child_str('**/debug_bridge/cable/type'))
+                config = self.config.getOption('config_file')
+                if config is not None:
+                    config = '--config-path %s' % config
+                else:
+                    config = '--config %s' % self.config.getOption('config_name')
+
+                bridge_opt = '%s --cable %s' % (config, self.get_json().get_child_str('**/debug_bridge/cable/type'))
 
                 if self.get_json().get_child_str('**/runner/boot-mode') == 'dev_hyper':
                     return execCmd('plpbridge %s --boot-mode=jtag_hyper load' % (bridge_opt))
