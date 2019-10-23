@@ -407,6 +407,7 @@ class Efuse(object):
           info2 = 0
           info6 = 0
           info5 = 0
+
           if self.config.get_child_str('**/vsim/model') == 'rtl':
             info7 = 1 # Don't use UDMA MEMCPY as it makes RTL platform crash
           else:
@@ -419,7 +420,7 @@ class Efuse(object):
             load_mode_hex = 2 | (2 << 3) | (0 << 4) | (0 << 5) | (0 << 6) | (0 << 7)
             # Hyperflash type
             info3 = (1 << 0)
-            info7 = (1 << 2) # Partially reconfigure pads to overcome HW issue with rwds cg latch
+            info7 |= (1 << 2) # Partially reconfigure pads to overcome HW issue with rwds cg latch
           elif load_mode == 'rom_spim':
             # RTL platform | flash boot | no encryption | no wait xtal
             load_mode_hex = 2 | (2 << 3) | (0 << 4) | (0 << 5) | (0 << 6) | (0 << 7)
