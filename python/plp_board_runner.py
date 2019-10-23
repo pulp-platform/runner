@@ -140,7 +140,7 @@ class Runner(Platform):
             elif self.get_json().get_child_str('**/chip/name') in ['vivosoc3']:
                 return execCmd('plpbridge --cable=ftdi --binary=%s --chip=vivosoc3 %s' % (binary, commands))
             else:
-                return execCmd('plpbridge --binary=%s --config=%s %s' % (binary, self.config.getOption('config_file'), commands))
+                return execCmd('plpbridge --binary=%s --config-path=%s %s' % (binary, self.config.getOption('config_file'), commands))
 
         elif self.config.getOption('pulpArchi') == 'pulp3':
             return execCmd("debug_bridge -c ft2232 -b %s --binary %s --load --late-reset --loop --printf --start %s %s" % (self.config.getOption('pulpArchi').replace('-riscv', ''), binary, mask, flashOpt))
