@@ -124,6 +124,9 @@ class Runner(runner.Runner):
             for param, key in self.get_params().items():
                 tcl_args.append('+%s=%s' % (param, key))
 
+            for param, key in self.get_args().items():
+                tcl_args.append('-g%s=%s' % (param, key))
+
             recordwlf = self.get_json().get_child_str('**/vsim/recordwlf')
             vsimdofile = self.get_json().get_child_str('**/vsim/dofile')
             enablecov = self.get_json().get_child_str('**/vsim/enablecov')
