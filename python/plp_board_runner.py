@@ -123,18 +123,22 @@ class Runner(Platform):
 
             if chip_name in ['gap', 'gap_rev1']:
 
-                config = self.config.getOption('config_file')
-                if config is not None:
-                    config = '--config-path %s' % config
+                if self.get_json().get_child_str('**/runner/bridge') == 'openocd':
+                    cmd = "openocd -f interface/ftdi/gapuino_ftdi.cfg -f target/gap8revb.tcl -f tcl/jtag_boot.tcl -c 'gap8_jtag_load_binary_and_start %s elf'" % (binary)
+                    return  execCmd(cmd)
                 else:
-                    config = '--config %s' % self.config.getOption('config_name')
+                    config = self.config.getOption('config_file')
+                    if config is not None:
+                        config = '--config-path %s' % config
+                    else:
+                        config = '--config %s' % self.config.getOption('config_name')
 
-                bridge_opt = '%s --cable %s' % (config, self.get_json().get_child_str('**/debug_bridge/cable/type'))
+                    bridge_opt = '%s --cable %s' % (config, self.get_json().get_child_str('**/debug_bridge/cable/type'))
 
-                if self.get_json().get_child_str('**/runner/boot-mode') == 'dev_hyper':
-                    return execCmd('plpbridge %s --boot-mode=jtag_hyper load' % (bridge_opt))
-                else:
-                    return execCmd('plpbridge %s --boot-mode=jtag --binary=%s %s' % (bridge_opt, binary, commands))
+                    if self.get_json().get_child_str('**/runner/boot-mode') == 'dev_hyper':
+                        return execCmd('plpbridge %s --boot-mode=jtag_hyper load' % (bridge_opt))
+                    else:
+                        return execCmd('plpbridge %s --boot-mode=jtag --binary=%s %s' % (bridge_opt, binary, commands))
             elif self.get_json().get_child_str('**/chip/name') in ['wolfe']:
                 return execCmd('plpbridge --cable=ftdi --boot-mode=jtag --binary=%s --chip=wolfe %s' % (binary, commands))
             elif self.get_json().get_child_str('**/chip/name') in ['vivosoc3']:
