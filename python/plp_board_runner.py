@@ -123,8 +123,9 @@ class Runner(Platform):
 
             if chip_name in ['gap', 'gap_rev1']:
 
-                if self.get_json().get_child_str('**/runner/bridge') == 'openocd':
-                    cmd = "openocd -f interface/ftdi/gapuino_ftdi.cfg -f target/gap8revb.tcl -f tcl/jtag_boot.tcl -c 'gap8_jtag_load_binary_and_start %s elf'" % (binary)
+                if self.get_json().get_child_str('**/runner/bridge') == 'openocd' or os.environ.get('GAP_USE_OPENOCD') is not None:
+
+                    cmd = "openocd -f interface/ftdi/gapuino_ftdi.cfg -f %s -f tcl/jtag_boot.tcl -c 'gap8_jtag_load_binary_and_start %s elf'" % (self.get_json().get_child_str('**/openocd/board'), binary)
                     return  execCmd(cmd)
                 else:
                     config = self.config.getOption('config_file')
