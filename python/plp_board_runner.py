@@ -86,9 +86,17 @@ class Runner(Platform):
     def flash(self):
         chip_name = self.get_json().get_child_str('**/chip/name')
 
-        if execCmd('plpbridge --cable=ftdi@digilent --chip=%s flash_erase_chip --flasher-init' % chip_name):
+        config = self.config.getOption('config_file')
+        if config is not None:
+            config = '--config-path %s' % config
+        else:
+            config = '--config %s' % self.config.getOption('config_name')
+
+        bridge_opt = '%s --cable %s' % (config, self.get_json().get_child_str('**/debug_bridge/cable/type'))
+
+        if execCmd('plpbridge %s flash_erase_chip --flasher-init' % bridge_opt):
             return -1
-        if execCmd('plpbridge --cable=ftdi@digilent --chip=%s flash_write --addr=0 --file=%s --flasher-init' % (chip_name, self.get_flash_preload_file())):
+        if execCmd('plpbridge %s flash_write --addr=0 --file=%s --flasher-init' % (bridge_opt, self.get_flash_preload_file())):
             return -1
 
         return 0
