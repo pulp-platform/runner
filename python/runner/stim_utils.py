@@ -214,7 +214,7 @@ class Efuse(object):
 
     pulp_chip_family = self.config.get_child_str('**/chip/pulp_chip_family')
 
-    if pulp_chip_family == 'gap' or pulp_chip == 'vega' or pulp_chip == 'gap9':
+    if pulp_chip_family == 'gap' or pulp_chip == 'vega' or pulp_chip == 'gap9' or pulp_chip == 'gap9_v2':
 
       load_mode = self.config.get_child_str('**/runner/boot-mode')
       encrypted = self.config.get_child_str('**/efuse/encrypted')
@@ -265,7 +265,7 @@ class Efuse(object):
 
             efuses.append('0:%s' % load_mode_hex)
     
-      elif pulp_chip == 'vega' or pulp_chip == 'gap9':
+      elif pulp_chip == 'vega' or pulp_chip == 'gap9' or pulp_chip == 'gap9_v2':
         efuses = [0] * 128
         info2 = 0
         info3 = 0
@@ -493,7 +493,7 @@ class Efuse(object):
                   
 
     # Efuse preloading file generation
-    if pulp_chip == 'vega' or pulp_chip == 'gap9':
+    if pulp_chip == 'vega' or pulp_chip == 'gap9' or pulp_chip == 'gap9_v2':
 
       self.dump('  Generating to file: ' + filename)
 
